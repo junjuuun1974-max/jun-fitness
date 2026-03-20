@@ -10,24 +10,16 @@
 <title>JUN FITNESS</title>
 <style>
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{height:100%;margin:0;padding:0;background:#0D0F14;} #root,#app-root{height:100%;margin:0;padding:0;}
+  html,body,#root{height:100%;margin:0;padding:0;background:#0D0F14;}
   input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
   input[type=number]{-moz-appearance:textfield;}
   ::-webkit-scrollbar{display:none;}
   textarea{font-family:inherit;}
   /* iPhone Safe Area */
-  #app-root{
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: #0D0F14;
-  }
 </style>
 </head>
 <body>
-<div id="app-root" style="padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);height:100%;display:flex;flex-direction:column;background:#0D0F14;"><div id="root" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0;"></div></div>
+<div id="root"></div>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
@@ -519,7 +511,7 @@ return(
 {meal.warn&&<div style={{padding:“7px 10px”,borderRadius:7,marginTop:10,marginBottom:8,fontSize:12,background:isWarn?“rgba(239,68,68,0.1)”:“rgba(52,211,153,0.1)”,border:`1px solid ${isWarn?"rgba(239,68,68,0.3)":"rgba(52,211,153,0.3)"}`,color:isWarn?”#FCA5A5”:”#6EE7B7”}}>{meal.warn}</div>}
 <div style={{fontSize:13,color:”#CBD5E1”,lineHeight:1.7,marginTop:10,marginBottom:10}}>{meal.items}</div>
 {meal.supps.length>0&&<div style={{marginBottom:10}}><div style={{fontSize:10,color:”#64748B”,marginBottom:5}}>💊 サプリ・薬</div><div style={{display:“flex”,flexWrap:“wrap”,gap:5}}>{meal.supps.map(s=><Chip key={s}>{s}</Chip>)}</div></div>}
-{edit?(<div style={{marginTop:8}}><textarea value={val} onChange={e=>setVal(e.target.value)} placeholder=“実際の摂取・メモ…” style={{width:“100%”,minHeight:60,background:”#0D0F14”,border:“1px solid #374151”,borderRadius:7,color:”#E2E8F0”,fontSize:13,padding:10,resize:“vertical”,boxSizing:“border-box”}}/><div style={{display:“flex”,gap:8,marginTop:8}}><button onClick={()=>{onNote(val);setEdit(false);}} style={{flex:1,padding:“9px 0”,borderRadius:7,background:accent,border:“none”,color:”#fff”,cursor:“pointer”,fontSize:13,fontWeight:700}}>保存</button><button onClick={()=>setEdit(false)} style={{flex:1,padding:“9px 0”,borderRadius:7,background:”#252830”,border:“none”,color:”#94A3B8”,cursor:“pointer”,fontSize:13}}>キャンセル</button></div></div>):(<button onClick={()=>setEdit(true)} style={{width:“100%”,padding:“8px 0”,borderRadius:7,background:“rgba(255,255,255,0.04)”,border:“1px solid #252830”,color:”#94A3B8”,cursor:“pointer”,fontSize:12,marginTop:4}}>{note?`📝 ${note.substring(0,50)}${note.length>50?"…":""}`:”+  メモを追加”}</button>)}
+{edit?(<div style={{marginTop:8}}><textarea value={val} onChange={e=>setVal(e.target.value)} placeholder=“実際の摂取・メモ…” style={{width:“100%”,minHeight:60,background:”#0D0F14”,border:“1px solid #374151”,borderRadius:7,color:”#E2E8F0”,fontSize:13,padding:10,resize:“vertical”,boxSizing:“border-box”}}/><div style={{display:“flex”,gap:8,marginTop:8}}><button onClick={()=>{onNote(val);setEdit(false);}} style={{flex:1,padding:“9px 0”,borderRadius:7,background:accent,border:“none”,color:”#fff”,cursor:“pointer”,fontSize:13,fontWeight:700}}>保存</button><button onClick={()=>setEdit(false)} style={{flex:1,padding:“9px 0”,borderRadius:7,background:”#252830”,border:“none”,color:”#94A3B8”,cursor:“pointer”,fontSize:13}}>キャンセル</button></div></div>):(<button onClick={()=>setEdit(true)} style={{width:“100%”,padding:“8px 0”,borderRadius:7,background:“rgba(255,255,255,0.04)”,border:“1px solid #252830”,color:”#94A3B8”,cursor:“pointer”,fontSize:12,marginTop:4}}>{note?`📝 ${note.substring(0,50)}${note.length>50?"...":""}`:”+  メモを追加”}</button>)}
 </div>
 )}
 </div>
@@ -611,7 +603,7 @@ const CELL=34;
 if(!ready)return(<div style={{background:”#0D0F14”,height:“100vh”,display:“flex”,alignItems:“center”,justifyContent:“center”,color:”#64748B”}}>読み込み中…</div>);
 
 return(
-<div style={{background:”#0D0F14”,height:“100%”,display:“flex”,flexDirection:“column”,overflow:“hidden”,fontFamily:”‘Hiragino Sans’,‘Noto Sans JP’,‘Yu Gothic’,sans-serif”,color:”#E2E8F0”,paddingTop:“env(safe-area-inset-top)”,paddingBottom:“env(safe-area-inset-bottom)”}}>
+<div style={{background:”#0D0F14”,height:“100%”,display:“flex”,flexDirection:“column”,overflow:“hidden”,fontFamily:”‘Hiragino Sans’,‘Noto Sans JP’,‘Yu Gothic’,sans-serif”,color:”#E2E8F0”}}>
 
 ```
   {/* Header */}

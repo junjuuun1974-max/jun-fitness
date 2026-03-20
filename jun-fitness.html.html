@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="JUN FITNESS"/>
+<title>JUN FITNESS</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body,#root{height:100%;margin:0;padding:0;background:#0D0F14;}
+  input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0;}
+  input[type=number]{-moz-appearance:textfield;}
+  ::-webkit-scrollbar{display:none;}
+  textarea{font-family:inherit;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+// ── localStorage helpers ──────────────────────────────────
+const LS_KEY="jun-fitness-v8";
+const lsLoad=()=>{try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(_){}return null;};
+const lsSave=(v)=>{try{localStorage.setItem(LS_KEY,JSON.stringify(v));}catch(_){}};
+
+const fmt=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const today=fmt(new Date());
+
+const DAY_TYPES={
+  workout: {label:"筋トレ",    color:"#F97316",bg:"rgba(249,115,22,0.15)",icon:"🏋️"},
+  rest:    {label:"非筋トレ",  color:"#60A5FA",bg:"rgba(96,165,250,0.15)",icon:"😴"},
+  recovery:{label:"リカバリー",color:"#34D399",bg:"rgba(52,211,153,0.15)",icon:"🔄"},
+};
+
+const MEALS={
+  workout:[
+    {id:"b", time:"7:00", label:"朝食",   icon:"🌅",items:"オートミール 80g・全卵 2個・バナナ 1本・ホエイ 1杯・ソイ 1杯",p:68,c:89,f:19,kcal:815,supps:["メトホルミン①","桑の葉茶","アルロース","クレアチン 5g","B12"],warn:null},
+    {id:"l", time:"12:00",label:"昼食",   icon:"☀️",items:"鶏胸肉 200g（生）・白米 90g・さつまいも 100g・豆腐 100g・野菜 150g",p:61,c:73,f:9,kcal:621,supps:["メトホルミン②（最後）","桑の葉茶","アルロース"],warn:null},
+    {id:"pw",time:"19:00",label:"トレ前食",icon:"⚡",items:"白米のみ 220g（茶碗1.5杯）・サラダチキン 100g・バナナ 1本",p:31,c:102,f:3,kcal:559,supps:[],warn:"⚠️ メトホルミン・桑の葉茶・アルロース なし"},
+    {id:"po",time:"21:30",label:"トレ後",  icon:"💪",items:"ホエイ 40g・白米のみ 80g（茶碗半杯）・グルタミン 5g",p:40,c:33,f:2,kcal:310,supps:["BCAA","グルタミン 5g"],warn:"⚠️ メトホルミン・桑の葉茶・アルロース なし"},
+    {id:"bed",time:"23:00",label:"就寝前", icon:"🌙",items:"プロテインヨーグルト 1個・ソイ 0.5杯",p:27,c:10,f:1,kcal:157,supps:[],warn:null},
+  ],
+  rest:[
+    {id:"b", time:"8:00", label:"朝食",icon:"🌅",items:"オートミール 50g・全卵 2個・バナナ 1本・ホエイ 1杯・ソイ 1杯",p:65,c:68,f:17,kcal:697,supps:["メトホルミン①","桑の葉茶","アルロース","クレアチン 5g","B12"],warn:null},
+    {id:"l", time:"13:00",label:"昼食",icon:"☀️",items:"鶏胸肉 200g（生）・白米 60g・さつまいも 100g・豆腐・納豆 150g・野菜 200g",p:68,c:67,f:12,kcal:660,supps:["メトホルミン②（最後）","桑の葉茶","アルロース"],warn:null},
+    {id:"d", time:"19:00",label:"夕食",icon:"🌆",items:"青魚 200g・さつまいも 80g・野菜 200g・アボカド 1/2個",p:47,c:37,f:25,kcal:553,supps:["桑の葉茶","アルロース（少量）"],warn:null},
+    {id:"bed",time:"22:00",label:"就寝前",icon:"🌙",items:"プロテインヨーグルト 1個・ソイ 0.5杯",p:27,c:10,f:1,kcal:157,supps:[],warn:null},
+  ],
+  recovery:[
+    {id:"b", time:"8:00", label:"朝食（回復優先）",icon:"🌅",items:"オートミール 80g・全卵 2個・バナナ 1本・ホエイ 1杯・ソイ 1杯",p:68,c:89,f:19,kcal:815,supps:["メトホルミン①","桑の葉茶","アルロース","クレアチン 5g","B12"],warn:"✅ 朝食糖質89g → グリコーゲン回復はここで完結"},
+    {id:"l", time:"13:00",label:"昼食",icon:"☀️",items:"鶏胸肉 200g（生）・白米 60g・さつまいも 100g・野菜 200g",p:62,c:52,f:8,kcal:536,supps:["メトホルミン②（最後）","桑の葉茶","アルロース"],warn:null},
+    {id:"d", time:"19:00",label:"夕食",icon:"🌆",items:"青魚 200g・さつまいも 80g・野菜 200g",p:46,c:34,f:15,kcal:455,supps:["桑の葉茶","アルロース（少量）"],warn:null},
+    {id:"bed",time:"22:00",label:"就寝前",icon:"🌙",items:"プロテインヨーグルト 1個・ソイ 0.5杯",p:27,c:10,f:1,kcal:157,supps:[],warn:null},
+  ],
+};
+const TOTALS={workout:{p:227,c:307,f:34,kcal:2462},rest:{p:207,c:182,f:55,kcal:2067},recovery:{p:203,c:185,f:43,kcal:1963}};
+
+const BASE_EX=[
+  {id:"row",     name:"シーテッドロー",        cur:100,tgt:120,defSets:5,defReps:10,note:"反動なし・腰を反らせない"},
+  {id:"leg",     name:"レッグプレス",           cur:150,tgt:200,defSets:5,defReps:10,note:"腰をシートから浮かせない"},
+  {id:"shoulder",name:"スミスショルダープレス", cur:50, tgt:65, defSets:5,defReps:10,note:"腹圧固定・反り腰厳禁"},
+  {id:"chest",   name:"チェストプレス",         cur:100,tgt:120,defSets:5,defReps:10,note:"週1回以上フリーウェイト"},
+  {id:"side",    name:"サイドレイズ",           cur:12, tgt:20, defSets:3,defReps:15,note:"反動禁止"},
+];
+const ARM_EX=[
+  {id:"curl", name:"EZバーカール（二頭）",        cur:32,  tgt:40, defSets:3,defReps:10,note:"週1回"},
+  {id:"press",name:"ケーブルプレスダウン（三頭）",cur:null,tgt:null,defSets:3,defReps:10,note:"収縮感重視"},
+];
+const WARMUP=[
+  {name:"プランク",        detail:"30〜60秒×3set"},
+  {name:"デッドバグ",      detail:"10回×3set"},
+  {name:"グルートブリッジ",detail:"15回×3set"},
+];
+const MONTH_JP=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+const DAY_JP=["日","月","火","水","木","金","土"];
+const DEFAULT_GOALS={
+  startDate:today,targetDate:"",
+  weight:{start:77.2,target:72.0},fatPct:{start:27.9,target:12.0},muscleMass:{start:52.8,target:55.0},
+  workoutsPerWeek:3,note:"",
+  exGoals:{row:100,leg:150,shoulder:50,chest:100,side:12,curl:32,press:null},
+};
+
+const getWeekKey=(dk)=>{const d=new Date(dk+"T00:00:00");const day=d.getDay();const mon=new Date(d);mon.setDate(d.getDate()-(day===0?6:day-1));return fmt(mon);};
+const getMonthKey=(dk)=>dk.slice(0,7);
+const calcDayVolume=(dayData)=>{if(!dayData||dayData.type!=="workout")return 0;let vol=0;Object.values(dayData.exLog||{}).forEach(log=>(log.sets||[]).forEach(s=>{vol+=(parseFloat(s.weight)||0)*(parseFloat(s.reps)||0);}));return Math.round(vol);};
+
+// ── Atoms ─────────────────────────────────────────────────
+const Chip=({children,color="#60A5FA"})=>(
+  <span style={{fontSize:10,padding:"2px 6px",borderRadius:4,background:`${color}22`,color,border:`1px solid ${color}33`,whiteSpace:"nowrap",display:"inline-block"}}>{children}</span>
+);
+const BarLine=({value,max,color,height=4})=>(
+  <div style={{height,background:"#252830",borderRadius:height/2,flex:1}}>
+    <div style={{width:`${Math.min(100,(value/Math.max(max,1))*100)}%`,height:"100%",background:color,borderRadius:height/2,transition:"width 0.4s"}}/>
+  </div>
+);
+
+// ── Sparkline ─────────────────────────────────────────────
+function Sparkline({data,color,width=290,height=60,goal}){
+  if(!data||data.length<2)return null;
+  const vals=data.map(d=>d.val);
+  const allV=goal!==undefined?[...vals,goal]:vals;
+  const minV=Math.min(...allV)*0.995,maxV=Math.max(...allV)*1.005,range=(maxV-minV)||1;
+  const pts=data.map((d,i)=>[(i/(data.length-1))*(width-20)+10,height-((d.val-minV)/range)*(height-16)-8]);
+  const goalY=goal!==undefined?height-((goal-minV)/range)*(height-16)-8:null;
+  return(
+    <svg width={width} height={height} style={{overflow:"visible",display:"block"}}>
+      {goalY!==null&&<><line x1={10} y1={goalY} x2={width-10} y2={goalY} stroke="#34D399" strokeWidth={1} strokeDasharray="4,3" opacity={0.6}/><text x={width-8} y={goalY-3} fill="#34D399" fontSize={9} textAnchor="end" opacity={0.8}>目標</text></>}
+      <polyline points={pts.map(p=>p.join(",")).join(" ")} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      {pts.map(([x,y],i)=>i===pts.length-1?<circle key={i} cx={x} cy={y} r={4} fill={color} stroke="#0D0F14" strokeWidth={1.5}/>:null)}
+    </svg>
+  );
+}
+
+// ── Bar Chart ─────────────────────────────────────────────
+function BarChart({data,color,width=290,height=80}){
+  if(!data||data.length===0)return <div style={{textAlign:"center",padding:16,color:"#374151",fontSize:11}}>データなし</div>;
+  const maxV=Math.max(...data.map(d=>d.val),1);
+  const barW=Math.floor((width-20)/data.length)-4;
+  return(
+    <svg width={width} height={height+24} style={{overflow:"visible",display:"block"}}>
+      {data.map((d,i)=>{
+        const x=10+i*((width-20)/data.length);
+        const bh=Math.max(2,(d.val/maxV)*(height-10));
+        const y=height-bh;
+        const isLast=i===data.length-1;
+        return(<g key={i}>
+          <rect x={x} y={y} width={barW} height={bh} fill={isLast?color:`${color}55`} rx={3}/>
+          {isLast&&<text x={x+barW/2} y={y-4} fill={color} fontSize={9} textAnchor="middle" fontWeight="700">{d.val>=1000?`${(d.val/1000).toFixed(1)}k`:d.val}</text>}
+          <text x={x+barW/2} y={height+14} fill="#374151" fontSize={8} textAnchor="middle">{d.label}</text>
+        </g>);
+      })}
+    </svg>
+  );
+}
+
+// ── Radial Progress ───────────────────────────────────────
+function RadialProgress({pct,color,size=72,label,value,unit,sub}){
+  const r=28,circ=2*Math.PI*r,offset=circ*(1-Math.min(1,Math.max(0,pct/100)));
+  return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
+      <div style={{position:"relative",width:size,height:size}}>
+        <svg width={size} height={size} style={{transform:"rotate(-90deg)"}}>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#252830" strokeWidth={6}/>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={6} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{transition:"stroke-dashoffset 0.8s"}}/>
+        </svg>
+        <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
+          <div style={{fontSize:13,fontWeight:900,color,fontFamily:"monospace",lineHeight:1}}>{value}</div>
+          <div style={{fontSize:9,color:"#64748B"}}>{unit}</div>
+        </div>
+      </div>
+      <div style={{fontSize:10,color:"#94A3B8",fontWeight:600}}>{label}</div>
+      {sub&&<div style={{fontSize:9,color:"#64748B"}}>{sub}</div>}
+    </div>
+  );
+}
+
+// ── Progress Page ─────────────────────────────────────────
+function ProgressPage({data,goals,updateGoals}){
+  const[editGoals,setEditGoals]=useState(false);
+  const[editExGoals,setEditExGoals]=useState(false);
+  const[tmpGoals,setTmpGoals]=useState(goals);
+  const[volMode,setVolMode]=useState("week");
+
+  const bodyEntries=Object.entries(data).filter(([,d])=>d.body&&(d.body.weight||d.body.fatPct||d.body.muscleMass)).sort(([a],[b])=>a.localeCompare(b));
+  const latest=bodyEntries.length>0?bodyEntries[bodyEntries.length-1][1].body:{};
+  const cur={weight:parseFloat(latest.weight||goals.weight.start),fatPct:parseFloat(latest.fatPct||goals.fatPct.start),muscleMass:parseFloat(latest.muscleMass||goals.muscleMass.start)};
+
+  const now=new Date();
+  const w4ago=new Date(now);w4ago.setDate(w4ago.getDate()-28);
+  const workoutDays=Object.entries(data).filter(([dk,d])=>{const dd=new Date(dk+"T00:00:00");return d.type==="workout"&&dd>=w4ago&&dd<=now;}).length;
+  const avgPerWeek=(workoutDays/4).toFixed(1);
+  let streak=0;const todayD=new Date(today+"T00:00:00");
+  const sortedW=Object.keys(data).filter(k=>data[k].type==="workout").sort().reverse();
+  for(let i=0;i<sortedW.length;i++){const d=new Date(sortedW[i]+"T00:00:00");const diff=Math.round((todayD-d)/(1000*60*60*24));if(diff===streak||(streak===0&&diff<=1))streak++;else break;}
+  const daysLeft=goals.targetDate?(Math.ceil((new Date(goals.targetDate+"T00:00:00")-new Date(today+"T00:00:00"))/(1000*60*60*24))):null;
+
+  const volByWeek={},volByMonth={};
+  Object.entries(data).forEach(([dk,d])=>{const vol=calcDayVolume(d);if(vol>0){const wk=getWeekKey(dk);volByWeek[wk]=(volByWeek[wk]||0)+vol;const mk=getMonthKey(dk);volByMonth[mk]=(volByMonth[mk]||0)+vol;}});
+  const last8weeks=Array.from({length:8},(_,i)=>{const d=new Date(todayD);d.setDate(d.getDate()-7*(7-i));const mon=new Date(d);mon.setDate(d.getDate()-(d.getDay()===0?6:d.getDay()-1));const key=fmt(mon);return{label:`${mon.getMonth()+1}/${mon.getDate()}`,val:volByWeek[key]||0};});
+  const last6months=Array.from({length:6},(_,i)=>{const d=new Date(now.getFullYear(),now.getMonth()-(5-i),1);const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;return{label:`${d.getMonth()+1}月`,val:volByMonth[key]||0};});
+
+  const exGoals=goals.exGoals||{};
+  const exMaxWeights={};
+  [...BASE_EX,...ARM_EX].forEach(ex=>{let max=0;Object.values(data).forEach(d=>{const log=(d.exLog||{})[ex.id];if(log&&log.sets)log.sets.forEach(s=>{const w=parseFloat(s.weight)||0;if(w>max)max=w;});});if(max>0)exMaxWeights[ex.id]=max;});
+
+  const calcPct=(start,target,current,lower)=>{const total=Math.abs(target-start)||1;const done=lower?(start-current):(current-start);return Math.max(0,Math.min(100,(done/total)*100));};
+  const wPct=calcPct(goals.weight.start,goals.weight.target,cur.weight,true);
+  const fPct=calcPct(goals.fatPct.start,goals.fatPct.target,cur.fatPct,true);
+  const mPct=calcPct(goals.muscleMass.start,goals.muscleMass.target,cur.muscleMass,false);
+
+  const last30=bodyEntries.slice(-30);
+  const wData=last30.filter(([,d])=>d.body.weight).map(([k,d])=>({date:k.slice(5),val:parseFloat(d.body.weight)}));
+  const fData=last30.filter(([,d])=>d.body.fatPct).map(([k,d])=>({date:k.slice(5),val:parseFloat(d.body.fatPct)}));
+  const mData=last30.filter(([,d])=>d.body.muscleMass).map(([k,d])=>({date:k.slice(5),val:parseFloat(d.body.muscleMass)}));
+
+  const iStyle={width:"100%",padding:"8px 10px",background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:13,boxSizing:"border-box",outline:"none"};
+
+  return(
+    <div style={{paddingBottom:24}}>
+      <button onClick={()=>{setTmpGoals(goals);setEditGoals(!editGoals);}} style={{width:"100%",padding:"9px 0",borderRadius:9,marginBottom:10,cursor:"pointer",background:"rgba(96,165,250,0.08)",border:"1px solid rgba(96,165,250,0.3)",color:"#60A5FA",fontSize:13,fontWeight:700}}>
+        🎯 {editGoals?"▲ 目標設定を閉じる":"▼ 目標を設定・編集"}
+      </button>
+      {editGoals&&(
+        <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #60A5FA44"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#60A5FA",marginBottom:12}}>体組成目標</div>
+          <div style={{marginBottom:10}}>
+            <div style={{fontSize:10,color:"#64748B",marginBottom:5}}>目標達成日</div>
+            <input type="date" value={tmpGoals.targetDate||""} onChange={e=>setTmpGoals({...tmpGoals,targetDate:e.target.value})} style={iStyle}/>
+          </div>
+          {[{key:"weight",label:"体重(kg)",color:"#60A5FA"},{key:"fatPct",label:"体脂肪率(%)",color:"#F97316"},{key:"muscleMass",label:"筋肉量(kg)",color:"#34D399"}].map(f=>(
+            <div key={f.key} style={{marginBottom:10}}>
+              <div style={{fontSize:10,color:f.color,fontWeight:700,marginBottom:5}}>{f.label}</div>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                {[{sub:"start",label:"開始値"},{sub:"target",label:"目標値"}].map(s=>(
+                  <div key={s.sub}>
+                    <div style={{fontSize:9,color:"#374151",marginBottom:3}}>{s.label}</div>
+                    <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false"
+                      value={String(tmpGoals[f.key][s.sub]??"")}
+                      onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))setTmpGoals({...tmpGoals,[f.key]:{...tmpGoals[f.key],[s.sub]:v}});}}
+                      style={{...iStyle,color:f.color,fontFamily:"monospace",fontWeight:700,textAlign:"center"}}/>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:"#64748B",marginBottom:5}}>週トレーニング目標（回）</div>
+            <input type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" autoCorrect="off" spellCheck="false"
+              value={String(tmpGoals.workoutsPerWeek??"")}
+              onChange={e=>{const v=e.target.value;if(v===""||/^\d+$/.test(v))setTmpGoals({...tmpGoals,workoutsPerWeek:v});}}
+              style={{...iStyle,fontFamily:"monospace",fontWeight:700,textAlign:"center"}}/>
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:"#64748B",marginBottom:5}}>メモ</div>
+            <textarea value={tmpGoals.note||""} onChange={e=>setTmpGoals({...tmpGoals,note:e.target.value})} placeholder="目標に向けての意気込みなど..." style={{...iStyle,minHeight:52,resize:"vertical"}}/>
+          </div>
+          <div style={{display:"flex",gap:8}}>
+            <button onClick={()=>{const parsed={...tmpGoals,weight:{start:parseFloat(tmpGoals.weight.start)||0,target:parseFloat(tmpGoals.weight.target)||0},fatPct:{start:parseFloat(tmpGoals.fatPct.start)||0,target:parseFloat(tmpGoals.fatPct.target)||0},muscleMass:{start:parseFloat(tmpGoals.muscleMass.start)||0,target:parseFloat(tmpGoals.muscleMass.target)||0},workoutsPerWeek:parseInt(tmpGoals.workoutsPerWeek)||3};updateGoals(parsed);setEditGoals(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#60A5FA",border:"none",color:"#000",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button>
+            <button onClick={()=>setEditGoals(false)} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>閉じる</button>
+          </div>
+        </div>
+      )}
+
+      <button onClick={()=>{setTmpGoals(goals);setEditExGoals(!editExGoals);}} style={{width:"100%",padding:"9px 0",borderRadius:9,marginBottom:14,cursor:"pointer",background:"rgba(249,115,22,0.08)",border:"1px solid rgba(249,115,22,0.3)",color:"#F97316",fontSize:13,fontWeight:700}}>
+        🏋️ {editExGoals?"▲ 種目目標重量を閉じる":"▼ 種目ごとの目標重量を設定"}
+      </button>
+      {editExGoals&&(
+        <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #F9731644"}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#F97316",marginBottom:12}}>種目別 目標重量 (kg)</div>
+          {[...BASE_EX,...ARM_EX].map(ex=>(
+            <div key={ex.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
+              <div style={{flex:1,fontSize:12,color:"#CBD5E1"}}>{ex.name}</div>
+              <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false"
+                value={String((tmpGoals.exGoals||{})[ex.id]??"")}
+                onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))setTmpGoals({...tmpGoals,exGoals:{...(tmpGoals.exGoals||{}),[ex.id]:v}});}}
+                placeholder="目標kg"
+                style={{width:80,padding:"6px 8px",background:"#0D0F14",border:"1px solid #374151",borderRadius:6,color:"#F97316",fontSize:14,fontFamily:"monospace",fontWeight:700,textAlign:"center",boxSizing:"border-box",outline:"none"}}/>
+              <span style={{fontSize:11,color:"#64748B"}}>kg</span>
+            </div>
+          ))}
+          <div style={{display:"flex",gap:8,marginTop:10}}>
+            <button onClick={()=>{const parsedEx={};Object.entries(tmpGoals.exGoals||{}).forEach(([k,v])=>{const n=parseFloat(v);if(!isNaN(n)&&n>0)parsedEx[k]=n;});updateGoals({...tmpGoals,exGoals:parsedEx});setEditExGoals(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#F97316",border:"none",color:"#000",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button>
+            <button onClick={()=>setEditExGoals(false)} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>閉じる</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+        <div style={{background:"#161920",borderRadius:10,padding:12,border:"1px solid #252830"}}><div style={{fontSize:10,color:"#64748B",marginBottom:5}}>🔥 連続トレーニング</div><div style={{fontSize:28,fontWeight:900,color:"#F97316",fontFamily:"monospace",lineHeight:1}}>{streak}</div><div style={{fontSize:10,color:"#64748B",marginTop:3}}>日連続</div></div>
+        <div style={{background:"#161920",borderRadius:10,padding:12,border:"1px solid #252830"}}><div style={{fontSize:10,color:"#64748B",marginBottom:5}}>📅 週平均（4週間）</div><div style={{fontSize:28,fontWeight:900,color:"#60A5FA",fontFamily:"monospace",lineHeight:1}}>{avgPerWeek}</div><div style={{fontSize:10,color:"#64748B",marginTop:3}}>回/週（目標{goals.workoutsPerWeek}回）</div><div style={{marginTop:5}}><BarLine value={parseFloat(avgPerWeek)} max={goals.workoutsPerWeek} color="#60A5FA"/></div></div>
+        <div style={{background:"#161920",borderRadius:10,padding:12,border:"1px solid #252830"}}><div style={{fontSize:10,color:"#64748B",marginBottom:5}}>⏳ 目標まで</div><div style={{fontSize:28,fontWeight:900,color:"#A78BFA",fontFamily:"monospace",lineHeight:1}}>{daysLeft!==null?(daysLeft>=0?daysLeft:"✓"):"—"}</div><div style={{fontSize:10,color:"#64748B",marginTop:3}}>{goals.targetDate?`${goals.targetDate.slice(5).replace("-","/")}まで`:"目標日未設定"}</div></div>
+        <div style={{background:"#161920",borderRadius:10,padding:12,border:"1px solid #252830"}}><div style={{fontSize:10,color:"#64748B",marginBottom:5}}>🏋️ 総トレーニング</div><div style={{fontSize:28,fontWeight:900,color:"#34D399",fontFamily:"monospace",lineHeight:1}}>{Object.values(data).filter(d=>d.type==="workout").length}</div><div style={{fontSize:10,color:"#64748B",marginTop:3}}>回（記録開始から）</div></div>
+      </div>
+
+      <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #252830"}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#94A3B8",marginBottom:12}}>💪 体組成 目標達成度</div>
+        <div style={{display:"flex",justifyContent:"space-around",marginBottom:16}}>
+          <RadialProgress pct={wPct} color="#60A5FA" label="体重"    value={cur.weight}     unit="kg" sub={`目標 ${goals.weight.target}kg`}/>
+          <RadialProgress pct={fPct} color="#F97316" label="体脂肪率" value={cur.fatPct}     unit="%"  sub={`目標 ${goals.fatPct.target}%`}/>
+          <RadialProgress pct={mPct} color="#34D399" label="筋肉量"   value={cur.muscleMass} unit="kg" sub={`目標 ${goals.muscleMass.target}kg`}/>
+        </div>
+        {[{label:"体重",cur:cur.weight,start:goals.weight.start,tgt:goals.weight.target,unit:"kg",color:"#60A5FA",lower:true},{label:"体脂肪率",cur:cur.fatPct,start:goals.fatPct.start,tgt:goals.fatPct.target,unit:"%",color:"#F97316",lower:true},{label:"筋肉量",cur:cur.muscleMass,start:goals.muscleMass.start,tgt:goals.muscleMass.target,unit:"kg",color:"#34D399",lower:false}].map(f=>{
+          const pct=calcPct(f.start,f.tgt,f.cur,f.lower);
+          const remaining=Math.max(0,Math.abs(f.tgt-f.start)-Math.max(0,f.lower?(f.start-f.cur):(f.cur-f.start)));
+          return(<div key={f.label} style={{marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+              <span style={{fontSize:11,color:"#94A3B8",fontWeight:600}}>{f.label}</span>
+              <span style={{fontSize:10,color:"#64748B",fontFamily:"monospace"}}>
+                <span style={{color:f.color,fontWeight:700}}>{f.cur}{f.unit}</span>{" → "}{f.tgt}{f.unit}{" "}
+                <span style={{color:remaining>0?"#F87171":"#34D399"}}>{remaining>0?`残${remaining.toFixed(1)}${f.unit}`:"✓達成"}</span>
+              </span>
+            </div>
+            <div style={{height:6,background:"#252830",borderRadius:3}}><div style={{width:`${pct}%`,height:"100%",background:f.color,borderRadius:3,transition:"width 0.6s"}}/></div>
+            <div style={{display:"flex",justifyContent:"space-between",marginTop:2}}>
+              <span style={{fontSize:9,color:"#374151"}}>{f.start}{f.unit}</span>
+              <span style={{fontSize:9,color:"#374151"}}>{Math.round(pct)}%</span>
+              <span style={{fontSize:9,color:"#374151"}}>{f.tgt}{f.unit}</span>
+            </div>
+          </div>);
+        })}
+      </div>
+
+      <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #252830"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#94A3B8"}}>📊 トレーニングボリューム</div>
+          <div style={{display:"flex",gap:0,background:"#0D0F14",borderRadius:7,padding:2}}>
+            <button onClick={()=>setVolMode("week")} style={{padding:"3px 10px",borderRadius:5,border:"none",cursor:"pointer",fontSize:11,fontWeight:volMode==="week"?700:400,background:volMode==="week"?"#252830":"transparent",color:volMode==="week"?"#F97316":"#64748B"}}>週次</button>
+            <button onClick={()=>setVolMode("month")} style={{padding:"3px 10px",borderRadius:5,border:"none",cursor:"pointer",fontSize:11,fontWeight:volMode==="month"?700:400,background:volMode==="month"?"#252830":"transparent",color:volMode==="month"?"#F97316":"#64748B"}}>月次</button>
+          </div>
+        </div>
+        <div style={{fontSize:10,color:"#64748B",marginBottom:8}}>ボリューム = 重量(kg) × 回数 の合計</div>
+        <BarChart data={volMode==="week"?last8weeks:last6months} color="#F97316" width={290} height={72}/>
+        {(()=>{const tw=volByWeek[getWeekKey(today)]||0;const tm=volByMonth[getMonthKey(today)]||0;const prevW=last8weeks[last8weeks.length-2]?.val||0;const prevM=last6months[last6months.length-2]?.val||0;return(
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:12}}>
+            <div style={{background:"#0D0F14",borderRadius:8,padding:10}}><div style={{fontSize:10,color:"#64748B",marginBottom:4}}>今週</div><div style={{fontSize:18,fontWeight:900,color:"#F97316",fontFamily:"monospace"}}>{tw>=1000?`${(tw/1000).toFixed(1)}k`:tw}<span style={{fontSize:10,marginLeft:2}}>kg</span></div>{prevW>0&&<div style={{fontSize:10,marginTop:3,color:(tw-prevW)>=0?"#34D399":"#F87171"}}>{(tw-prevW)>=0?"▲":"▼"}{Math.abs(tw-prevW)>=1000?`${(Math.abs(tw-prevW)/1000).toFixed(1)}k`:Math.abs(tw-prevW)} vs先週</div>}</div>
+            <div style={{background:"#0D0F14",borderRadius:8,padding:10}}><div style={{fontSize:10,color:"#64748B",marginBottom:4}}>今月</div><div style={{fontSize:18,fontWeight:900,color:"#F97316",fontFamily:"monospace"}}>{tm>=1000?`${(tm/1000).toFixed(1)}k`:tm}<span style={{fontSize:10,marginLeft:2}}>kg</span></div>{prevM>0&&<div style={{fontSize:10,marginTop:3,color:(tm-prevM)>=0?"#34D399":"#F87171"}}>{(tm-prevM)>=0?"▲":"▼"}{Math.abs(tm-prevM)>=1000?`${(Math.abs(tm-prevM)/1000).toFixed(1)}k`:Math.abs(tm-prevM)} vs先月</div>}</div>
+          </div>
+        );})()}
+      </div>
+
+      <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #252830"}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#94A3B8",marginBottom:12}}>🏋️ 種目別 最高重量 vs 目標</div>
+        {[...BASE_EX,...ARM_EX].map(ex=>{const maxW=exMaxWeights[ex.id]||0;const goalW=(exGoals[ex.id])||ex.tgt||0;const pct=goalW>0?Math.min(100,(maxW/goalW)*100):0;return(
+          <div key={ex.id} style={{marginBottom:10}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+              <span style={{fontSize:11,color:"#CBD5E1",fontWeight:600}}>{ex.name}</span>
+              <span style={{fontSize:10,fontFamily:"monospace"}}><span style={{color:"#F97316",fontWeight:700}}>{maxW>0?`${maxW}kg`:"未記録"}</span>{goalW>0&&<span style={{color:"#374151"}}> / 目標{goalW}kg</span>}</span>
+            </div>
+            {goalW>0&&<><div style={{height:5,background:"#252830",borderRadius:3}}><div style={{width:`${pct}%`,height:"100%",background:pct>=100?"#34D399":"#F97316",borderRadius:3,transition:"width 0.6s"}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:2}}><span style={{fontSize:9,color:"#374151"}}>0kg</span><span style={{fontSize:9,color:pct>=100?"#34D399":"#64748B"}}>{Math.round(pct)}%{pct>=100?" ✓":""}</span><span style={{fontSize:9,color:"#374151"}}>{goalW}kg</span></div></>}
+          </div>
+        );})}
+      </div>
+
+      {[{label:"体重推移",data:wData,color:"#60A5FA",goal:goals.weight.target,unit:"kg"},{label:"体脂肪率推移",data:fData,color:"#F97316",goal:goals.fatPct.target,unit:"%"},{label:"筋肉量推移",data:mData,color:"#34D399",goal:goals.muscleMass.target,unit:"kg"}].map(g=>(
+        <div key={g.label} style={{background:"#161920",borderRadius:12,padding:"12px 14px",marginBottom:12,border:"1px solid #252830"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#94A3B8"}}>{g.label}</div>
+            {g.data.length>0&&<div style={{fontSize:11,color:g.color,fontFamily:"monospace",fontWeight:700}}>最新 {g.data[g.data.length-1].val}{g.unit}</div>}
+          </div>
+          {g.data.length>=2?<Sparkline data={g.data} color={g.color} width={290} height={60} goal={g.goal}/>:<div style={{textAlign:"center",padding:"14px 0",color:"#374151",fontSize:11}}>データが2件以上で表示されます</div>}
+          {g.data.length>0&&<div style={{display:"flex",justifyContent:"space-between",marginTop:6}}>
+            <div style={{fontSize:10,color:"#64748B"}}>開始 <span style={{color:g.color,fontWeight:700}}>{g.data[0].val}{g.unit}</span></div>
+            <div style={{fontSize:10,color:"#64748B"}}>変化 <span style={{color:(g.data[g.data.length-1].val-g.data[0].val)*(g.label.includes("筋肉")?1:-1)>=0?"#34D399":"#F87171",fontWeight:700}}>{(g.data[g.data.length-1].val-g.data[0].val>=0)?"+":""}{(g.data[g.data.length-1].val-g.data[0].val).toFixed(1)}{g.unit}</span></div>
+            <div style={{fontSize:10,color:"#64748B"}}>最新 <span style={{color:g.color,fontWeight:700}}>{g.data[g.data.length-1].val}{g.unit}</span></div>
+          </div>}
+        </div>
+      ))}
+      {goals.note&&<div style={{background:"rgba(96,165,250,0.06)",borderRadius:10,padding:12,border:"1px solid rgba(96,165,250,0.2)"}}><div style={{fontSize:10,color:"#60A5FA",fontWeight:700,marginBottom:4}}>📝 目標メモ</div><div style={{fontSize:12,color:"#CBD5E1",lineHeight:1.6}}>{goals.note}</div></div>}
+    </div>
+  );
+}
+
+// ── SetLogger ─────────────────────────────────────────────
+function SetLogger({sets,onChange,accent,defWeight,defReps}){
+  const addSet=()=>onChange([...sets,{weight:defWeight||"",reps:defReps||""}]);
+  const removeSet=(i)=>onChange(sets.filter((_,j)=>j!==i));
+  const updSet=(i,f,v)=>{const n=[...sets];n[i]={...n[i],[f]:v};onChange(n);};
+  const iStyle=(val,ac)=>({width:"100%",padding:"5px 4px",background:"#0D0F14",border:`1px solid ${val?ac+"80":"#2a2e38"}`,borderRadius:6,color:val?ac:"#94A3B8",fontSize:13,fontFamily:"monospace",fontWeight:val?700:400,textAlign:"center",boxSizing:"border-box",outline:"none"});
+  return(
+    <div>
+      {sets.length>0&&<div style={{display:"grid",gridTemplateColumns:"18px 1fr 10px 1fr 20px",gap:4,alignItems:"center",marginBottom:4}}><div/><div style={{fontSize:9,color:"#374151",textAlign:"center",fontWeight:600}}>重量(kg)</div><div/><div style={{fontSize:9,color:"#374151",textAlign:"center",fontWeight:600}}>回数</div><div/></div>}
+      {sets.map((s,i)=>(
+        <div key={i} style={{display:"grid",gridTemplateColumns:"18px 1fr 10px 1fr 20px",gap:4,alignItems:"center",marginBottom:4}}>
+          <div style={{fontSize:10,color:"#374151",textAlign:"center",fontWeight:600}}>{i+1}</div>
+          <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false" value={s.weight} onChange={e=>{const v=e.target.value;if(v===""||(/^\d*\.?\d*$/.test(v)&&v.length<=4))updSet(i,"weight",v);}} placeholder={defWeight||"kg"} style={iStyle(s.weight,accent)}/>
+          <div style={{fontSize:10,color:"#374151",textAlign:"center"}}>×</div>
+          <input type="text" inputMode="numeric" pattern="[0-9]*" autoComplete="off" autoCorrect="off" spellCheck="false" value={s.reps} onChange={e=>{const v=e.target.value;if(v===""||/^\d+$/.test(v))updSet(i,"reps",v);}} placeholder={defReps||"回"} style={iStyle(s.reps,"#E2E8F0")}/>
+          <button onClick={()=>removeSet(i)} style={{background:"none",border:"none",color:"#374151",cursor:"pointer",fontSize:14,padding:0,lineHeight:1,textAlign:"center"}}>×</button>
+        </div>
+      ))}
+      <div style={{display:"flex",gap:6,marginTop:4}}>
+        <button onClick={addSet} style={{flex:1,padding:"5px 0",borderRadius:6,background:"rgba(255,255,255,0.03)",border:"1px dashed #2a2e38",color:"#64748B",cursor:"pointer",fontSize:11}}>＋ セット</button>
+        {sets.length===0&&<button onClick={()=>onChange(Array.from({length:5},()=>({weight:defWeight||"",reps:defReps||""})))} style={{flex:1,padding:"5px 0",borderRadius:6,background:"rgba(255,255,255,0.03)",border:"1px dashed #2a2e38",color:"#64748B",cursor:"pointer",fontSize:11}}>5set一括</button>}
+      </div>
+    </div>
+  );
+}
+
+// ── ExCard ────────────────────────────────────────────────
+function ExCard({ex,log={},onChange,accent,badge,onRemove,isCustom,goalWeight}){
+  const[open,setOpen]=useState(false);
+  const sets=log.sets||[],done=log.done||false,note=log.note||"";
+  const upd=(f,v)=>onChange({...log,[f]:v});
+  const doneSets=sets.filter(s=>s.weight||s.reps).length;
+  const maxW=sets.length>0?Math.max(...sets.map(s=>parseFloat(s.weight)||0)):0;
+  const gwPct=goalWeight&&maxW>0?Math.min(100,(maxW/goalWeight)*100):0;
+  return(
+    <div style={{background:"#161920",borderRadius:10,marginBottom:7,border:`1px solid ${done?accent+"66":"#252830"}`,overflow:"hidden"}}>
+      <div style={{display:"flex",alignItems:"stretch",minHeight:48}}>
+        <div onClick={e=>{e.stopPropagation();upd("done",!done);}} style={{width:40,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",borderRight:"1px solid #1E2028",flexShrink:0,background:done?`${accent}15`:"transparent"}}>
+          <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${done?accent:"#374151"}`,background:done?accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center"}}>{done&&<span style={{color:"#fff",fontSize:11,fontWeight:900,lineHeight:1}}>✓</span>}</div>
+        </div>
+        <div onClick={()=>setOpen(!open)} style={{flex:1,padding:"9px 10px",cursor:"pointer",minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:5,flexWrap:"wrap"}}>
+            <span style={{fontSize:13,fontWeight:700,color:done?accent:"#E2E8F0"}}>{ex.name}</span>
+            {badge&&<Chip color="#A78BFA">{badge}</Chip>}
+            {isCustom&&<Chip color="#F59E0B">カスタム</Chip>}
+          </div>
+          <div style={{fontSize:10,color:"#64748B",marginTop:2,display:"flex",gap:8,flexWrap:"wrap"}}>
+            {goalWeight&&<span style={{color:"#374151"}}>目標{goalWeight}kg</span>}
+            {doneSets>0&&<span style={{color:accent,fontWeight:700}}>{doneSets}set{maxW>0?` · 最高${maxW}kg`:""}</span>}
+            {goalWeight&&maxW>0&&<span style={{color:gwPct>=100?"#34D399":"#64748B"}}>{Math.round(gwPct)}%</span>}
+          </div>
+          {goalWeight&&maxW>0&&<div style={{height:3,background:"#252830",borderRadius:2,marginTop:4}}><div style={{width:`${gwPct}%`,height:"100%",background:gwPct>=100?"#34D399":accent,borderRadius:2,transition:"width 0.4s"}}/></div>}
+        </div>
+        <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
+          {onRemove&&<button onClick={e=>{e.stopPropagation();onRemove();}} style={{background:"none",border:"none",color:"#374151",cursor:"pointer",fontSize:15,padding:"0 6px"}}>🗑</button>}
+          <div onClick={()=>setOpen(!open)} style={{padding:"0 10px",cursor:"pointer",color:"#64748B",fontSize:11,display:"flex",alignItems:"center"}}>{open?"▲":"▼"}</div>
+        </div>
+      </div>
+      {open&&(
+        <div style={{padding:"10px 12px",borderTop:"1px solid #1E2028"}}>
+          {ex.note&&<div style={{fontSize:10,color:"#94A3B8",marginBottom:8}}>⚠️ {ex.note}</div>}
+          <SetLogger sets={sets} onChange={v=>upd("sets",v)} accent={accent} defWeight={ex.cur?String(ex.cur):""} defReps={ex.defReps?String(ex.defReps):""}/>
+          <textarea value={note} onChange={e=>upd("note",e.target.value)} placeholder="メモ（フォーム・体感など）..." style={{width:"100%",minHeight:44,marginTop:8,background:"#0D0F14",border:"1px solid #252830",borderRadius:7,color:"#94A3B8",fontSize:11,padding:8,resize:"vertical",boxSizing:"border-box"}}/>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── TrainingPanel ─────────────────────────────────────────
+function TrainingPanel({dayType,dayData,updateDay,accent,goals}){
+  const[addOpen,setAddOpen]=useState(false);
+  const[newName,setNewName]=useState(""),  [newCur,setNewCur]=useState(""), [newSets,setNewSets]=useState("5"), [newReps,setNewReps]=useState("10");
+  const[showArms,setShowArms]=useState(dayData.showArms||false);
+  const exLog=dayData.exLog||{},customExs=dayData.customExs||[],exGoals=goals.exGoals||{};
+  const updEx=(id,log)=>updateDay({exLog:{...exLog,[id]:log}});
+  const totalDone=[...BASE_EX,...(showArms?ARM_EX:[]),...customExs].filter(e=>(exLog[e.id]||{}).done).length;
+  const totalAll=BASE_EX.length+(showArms?ARM_EX.length:0)+customExs.length;
+  const addCustom=()=>{if(!newName.trim())return;const id=`custom_${Date.now()}`;updateDay({customExs:[...customExs,{id,name:newName.trim(),cur:newCur?parseFloat(newCur):null,tgt:null,defSets:parseInt(newSets)||5,defReps:parseInt(newReps)||10,note:""}]});setNewName("");setNewCur("");setNewSets("5");setNewReps("10");setAddOpen(false);};
+  const todayVol=calcDayVolume(dayData);
+  if(dayType==="rest")return(<div style={{textAlign:"center",padding:48,color:"#64748B"}}><div style={{fontSize:48,marginBottom:12}}>😴</div><div style={{fontSize:15,marginBottom:6}}>非筋トレ日</div><div style={{fontSize:12}}>ウォーキング 30〜40分 推奨</div></div>);
+  return(
+    <div style={{paddingBottom:60}}>
+      <div style={{background:"#161920",borderRadius:10,padding:"10px 12px",marginBottom:12,border:"1px solid #252830"}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",marginBottom:7}}>🔥 ウォームアップ（5〜10分）</div>
+        {WARMUP.map((w,i)=>(<div key={w.name} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"5px 0",borderBottom:i<WARMUP.length-1?"1px solid #1E2028":"none"}}><span style={{fontSize:12,color:"#CBD5E1"}}>{w.name}</span><span style={{fontSize:10,color:"#64748B",fontFamily:"monospace"}}>{w.detail}</span></div>))}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+        <span style={{fontSize:11,color:"#64748B",flexShrink:0}}>完了 {totalDone}/{totalAll}</span>
+        <BarLine value={totalDone} max={Math.max(totalAll,1)} color={accent}/>
+        {todayVol>0&&<span style={{fontSize:10,color:"#F97316",fontFamily:"monospace",flexShrink:0,fontWeight:700}}>{todayVol>=1000?`${(todayVol/1000).toFixed(1)}k`:todayVol}kg</span>}
+        {totalDone===totalAll&&totalAll>0&&<span style={{fontSize:11,color:"#34D399",flexShrink:0}}>✓</span>}
+      </div>
+      <div style={{fontSize:10,fontWeight:700,color:"#64748B",marginBottom:7,textTransform:"uppercase",letterSpacing:1}}>ベース種目（毎回）</div>
+      {BASE_EX.map(ex=><ExCard key={ex.id} ex={ex} log={exLog[ex.id]} onChange={log=>updEx(ex.id,log)} accent={accent} goalWeight={exGoals[ex.id]}/>)}
+      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:12,marginBottom:7}}>
+        <div style={{fontSize:10,fontWeight:700,color:"#64748B",textTransform:"uppercase",letterSpacing:1}}>二頭・三頭（週1回）</div>
+        <button onClick={()=>{const n=!showArms;setShowArms(n);updateDay({showArms:n});}} style={{padding:"4px 10px",borderRadius:6,fontSize:11,cursor:"pointer",background:showArms?"rgba(167,139,250,0.2)":"rgba(255,255,255,0.04)",border:showArms?"1px solid rgba(167,139,250,0.4)":"1px solid #252830",color:showArms?"#C4B5FD":"#64748B"}}>{showArms?"✓ 今日実施":"今日実施する"}</button>
+      </div>
+      {showArms&&ARM_EX.map(ex=><ExCard key={ex.id} ex={ex} log={exLog[ex.id]} onChange={log=>updEx(ex.id,log)} accent="#A78BFA" badge="週1" goalWeight={exGoals[ex.id]}/>)}
+      {customExs.length>0&&<><div style={{fontSize:10,fontWeight:700,color:"#64748B",marginTop:12,marginBottom:7,textTransform:"uppercase",letterSpacing:1}}>その他の種目</div>{customExs.map(ex=><ExCard key={ex.id} ex={ex} log={exLog[ex.id]} onChange={log=>updEx(ex.id,log)} accent="#F59E0B" onRemove={()=>updateDay({customExs:customExs.filter(e=>e.id!==ex.id)})} isCustom/>)}</>}
+      <div style={{marginTop:12}}>
+        {!addOpen?(<button onClick={()=>setAddOpen(true)} style={{width:"100%",padding:"10px 0",borderRadius:10,cursor:"pointer",background:"rgba(245,158,11,0.08)",border:"1px dashed rgba(245,158,11,0.4)",color:"#F59E0B",fontSize:13,fontWeight:700}}>＋ その他の種目を追加</button>):(
+          <div style={{background:"#161920",borderRadius:10,padding:12,border:"1px solid rgba(245,158,11,0.3)"}}>
+            <div style={{fontSize:12,fontWeight:700,color:"#F59E0B",marginBottom:10}}>＋ 種目を追加</div>
+            <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="種目名" style={{width:"100%",padding:"9px 10px",background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:13,boxSizing:"border-box",outline:"none",marginBottom:8}}/>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:10}}>
+              {[{label:"重量(kg)",val:newCur,set:setNewCur,ph:"例:30"},{label:"セット数",val:newSets,set:setNewSets,ph:"5"},{label:"レップ数",val:newReps,set:setNewReps,ph:"10"}].map(f=>(
+                <div key={f.label}><div style={{fontSize:10,color:"#64748B",marginBottom:4}}>{f.label}</div><input type="text" inputMode="numeric" value={f.val} onChange={e=>f.set(e.target.value)} placeholder={f.ph} style={{width:"100%",padding:"7px",background:"#0D0F14",border:"1px solid #374151",borderRadius:6,color:"#E2E8F0",fontSize:14,fontFamily:"monospace",textAlign:"center",boxSizing:"border-box",outline:"none"}}/></div>
+              ))}
+            </div>
+            <div style={{display:"flex",gap:8}}>
+              <button onClick={addCustom} disabled={!newName.trim()} style={{flex:1,padding:"9px 0",borderRadius:7,background:newName.trim()?"#F59E0B":"#252830",border:"none",color:newName.trim()?"#000":"#64748B",cursor:newName.trim()?"pointer":"default",fontSize:13,fontWeight:700}}>追加</button>
+              <button onClick={()=>{setAddOpen(false);setNewName("");}} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>キャンセル</button>
+            </div>
+          </div>
+        )}
+      </div>
+      <div style={{marginTop:12}}>
+        <div style={{fontSize:10,color:"#64748B",marginBottom:5}}>📋 全体メモ・体調</div>
+        <textarea value={dayData.trainingNote||""} onChange={e=>updateDay({trainingNote:e.target.value})} placeholder="今日の感想・体調..." style={{width:"100%",minHeight:60,background:"#161920",border:"1px solid #252830",borderRadius:9,color:"#E2E8F0",fontSize:12,padding:10,resize:"vertical",boxSizing:"border-box"}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── MealCard / MealPanel ──────────────────────────────────
+function MealCard({meal,checked,onCheck,note,onNote,accent}){
+  const[open,setOpen]=useState(false),[edit,setEdit]=useState(false),[val,setVal]=useState(note||"");
+  const isWarn=meal.warn?.startsWith("⚠️");
+  return(
+    <div style={{background:"#161920",borderRadius:10,marginBottom:8,border:`1px solid ${checked?accent+"55":"#252830"}`,overflow:"hidden"}}>
+      <div onClick={()=>setOpen(!open)} style={{padding:"11px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
+        <div style={{fontSize:20,flexShrink:0}}>{meal.icon}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,fontWeight:700}}>{meal.label}</span><span style={{fontSize:11,color:"#64748B",fontFamily:"monospace"}}>{meal.time}</span></div>
+          <div style={{fontSize:11,color:"#64748B",marginTop:2}}>{meal.kcal}kcal · P<span style={{color:"#F97316"}}>{meal.p}</span>g · C<span style={{color:"#60A5FA"}}>{meal.c}</span>g · F<span style={{color:"#34D399"}}>{meal.f}</span>g</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          {note&&<div style={{width:6,height:6,borderRadius:"50%",background:"#F97316",flexShrink:0}}/>}
+          <div onClick={e=>{e.stopPropagation();onCheck(!checked);}} style={{width:24,height:24,borderRadius:6,flexShrink:0,border:`2px solid ${checked?accent:"#374151"}`,background:checked?accent:"transparent",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{checked&&<span style={{color:"#fff",fontSize:13,fontWeight:900,lineHeight:1}}>✓</span>}</div>
+          <span style={{color:"#64748B",fontSize:11}}>{open?"▲":"▼"}</span>
+        </div>
+      </div>
+      {open&&(
+        <div style={{padding:"0 14px 14px",borderTop:"1px solid #1E2028"}}>
+          {meal.warn&&<div style={{padding:"7px 10px",borderRadius:7,marginTop:10,marginBottom:8,fontSize:12,background:isWarn?"rgba(239,68,68,0.1)":"rgba(52,211,153,0.1)",border:`1px solid ${isWarn?"rgba(239,68,68,0.3)":"rgba(52,211,153,0.3)"}`,color:isWarn?"#FCA5A5":"#6EE7B7"}}>{meal.warn}</div>}
+          <div style={{fontSize:13,color:"#CBD5E1",lineHeight:1.7,marginTop:10,marginBottom:10}}>{meal.items}</div>
+          {meal.supps.length>0&&<div style={{marginBottom:10}}><div style={{fontSize:10,color:"#64748B",marginBottom:5}}>💊 サプリ・薬</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{meal.supps.map(s=><Chip key={s}>{s}</Chip>)}</div></div>}
+          {edit?(<div style={{marginTop:8}}><textarea value={val} onChange={e=>setVal(e.target.value)} placeholder="実際の摂取・メモ..." style={{width:"100%",minHeight:60,background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:13,padding:10,resize:"vertical",boxSizing:"border-box"}}/><div style={{display:"flex",gap:8,marginTop:8}}><button onClick={()=>{onNote(val);setEdit(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:accent,border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button><button onClick={()=>setEdit(false)} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>キャンセル</button></div></div>):(<button onClick={()=>setEdit(true)} style={{width:"100%",padding:"8px 0",borderRadius:7,background:"rgba(255,255,255,0.04)",border:"1px solid #252830",color:"#94A3B8",cursor:"pointer",fontSize:12,marginTop:4}}>{note?`📝 ${note.substring(0,50)}${note.length>50?"…":""}`:"+  メモを追加"}</button>)}
+        </div>
+      )}
+    </div>
+  );
+}
+function MealPanel({dayType,dayData,updateDay,accent}){
+  const meals=MEALS[dayType]||MEALS.rest,totals=TOTALS[dayType]||TOTALS.rest;
+  const checks=dayData.mealChecks||{},notes=dayData.mealNotes||{};
+  const done=meals.filter(m=>checks[m.id]).length;
+  return(
+    <div style={{paddingBottom:16}}>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
+        {[{label:"タンパク質",val:`${totals.p}g`,color:"#F97316"},{label:"糖質",val:`${totals.c}g`,color:"#60A5FA"},{label:"脂質",val:`${totals.f}g`,color:"#34D399"},{label:"kcal",val:totals.kcal,color:"#A78BFA"}].map(m=>(<div key={m.label} style={{background:"#161920",borderRadius:9,padding:"10px 4px",textAlign:"center",border:"1px solid #252830"}}><div style={{fontSize:9,color:"#64748B",marginBottom:4}}>{m.label}</div><div style={{fontSize:15,fontWeight:900,color:m.color,fontFamily:"monospace"}}>{m.val}</div></div>))}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+        <span style={{fontSize:11,color:"#64748B",flexShrink:0}}>完了 {done}/{meals.length}</span>
+        <BarLine value={done} max={meals.length} color={accent}/>
+        {done===meals.length&&<span style={{fontSize:11,color:"#34D399",flexShrink:0}}>✓</span>}
+      </div>
+      {meals.map(m=><MealCard key={m.id} meal={m} checked={!!checks[m.id]} onCheck={v=>updateDay({mealChecks:{...checks,[m.id]:v}})} note={notes[m.id]} onNote={v=>updateDay({mealNotes:{...notes,[m.id]:v}})} accent={accent}/>)}
+    </div>
+  );
+}
+
+// ── BodyPanel ─────────────────────────────────────────────
+function BodyPanel({selDate,allData,updateDay,accent}){
+  const dayData=allData[selDate]||{},body=dayData.body||{};
+  const upd=(f,v)=>updateDay({body:{...body,[f]:v}});
+  const fields=[
+    {id:"weight",    label:"体重",    unit:"kg",color:"#60A5FA",ph:"77.2"},
+    {id:"fatPct",    label:"体脂肪率",unit:"%", color:"#F97316",ph:"27.9"},
+    {id:"muscleMass",label:"筋肉量",  unit:"kg",color:"#34D399",ph:"52.8"},
+  ];
+  return(
+    <div style={{paddingBottom:16}}>
+      <div style={{background:"#161920",borderRadius:12,padding:16,marginBottom:14,border:"1px solid #252830"}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",marginBottom:14,textAlign:"center"}}>📊 体組成を入力</div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+          {fields.map(f=>(
+            <div key={f.id} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+              <div style={{fontSize:10,color:f.color,fontWeight:700}}>{f.label}</div>
+              <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false"
+                value={body[f.id]||""}
+                onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))upd(f.id,v);}}
+                placeholder={f.ph}
+                style={{width:"100%",padding:"12px 6px",background:"#0D0F14",border:`2px solid ${body[f.id]?f.color+"66":"#252830"}`,borderRadius:10,color:f.color,fontSize:22,fontWeight:900,fontFamily:"monospace",textAlign:"center",boxSizing:"border-box",outline:"none"}}/>
+              <div style={{fontSize:11,color:"#374151"}}>{f.unit}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div style={{background:"#161920",borderRadius:10,padding:12,border:"1px solid #252830"}}>
+        <div style={{fontSize:11,color:"#64748B",marginBottom:5}}>📋 今日のメモ</div>
+        <textarea value={body.note||""} onChange={e=>upd("note",e.target.value)} placeholder="体調・睡眠・気になることなど..." style={{width:"100%",minHeight:56,background:"#0D0F14",border:"1px solid #252830",borderRadius:7,color:"#E2E8F0",fontSize:12,padding:10,resize:"vertical",boxSizing:"border-box"}}/>
+      </div>
+    </div>
+  );
+}
+
+// ── Main App ──────────────────────────────────────────────
+function App(){
+  const[month,setMonth]=useState(new Date());
+  const[selDate,setSelDate]=useState(today);
+  const[data,setData]=useState({});
+  const[goals,setGoals]=useState(DEFAULT_GOALS);
+  const[tab,setTab]=useState("cal");
+  const[panel,setPanel]=useState("meal");
+  const[ready,setReady]=useState(false);
+
+  useEffect(()=>{
+    const saved=lsLoad();
+    if(saved){setData(saved.data||{});setGoals({...DEFAULT_GOALS,...(saved.goals||{})});}
+    setReady(true);
+  },[]);
+
+  const save=(nd,ng)=>{setData(nd);setGoals(ng);lsSave({data:nd,goals:ng});};
+  const updateDay=(dk,patch)=>save({...data,[dk]:{...(data[dk]||{}),...patch}},goals);
+  const updateGoals=(g)=>save(data,g);
+  const updateSel=(patch)=>updateDay(selDate,patch);
+
+  const selData=data[selDate]||{};
+  const dayType=selData.type||"rest";
+  const accent=DAY_TYPES[dayType].color;
+  const yr=month.getFullYear(),mo=month.getMonth();
+  const dim=new Date(yr,mo+1,0).getDate(),fd=new Date(yr,mo,1).getDay();
+  const selObj=new Date(selDate+"T00:00:00");
+  const CELL=34;
+
+  if(!ready)return(<div style={{background:"#0D0F14",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748B"}}>読み込み中...</div>);
+
+  return(
+    <div style={{background:"#0D0F14",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"'Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif",color:"#E2E8F0"}}>
+
+      {/* Header */}
+      <div style={{flexShrink:0,background:"#111318",borderBottom:`2px solid ${tab==="progress"?"#A78BFA":accent}44`}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"6px 12px",borderBottom:"1px solid #1E2028"}}>
+          <div style={{fontSize:13,fontWeight:900,color:"#F97316"}}>🏋️ JUN FITNESS</div>
+          <div style={{display:"flex",gap:0,background:"#1E2028",borderRadius:8,padding:2}}>
+            <button onClick={()=>setTab("cal")} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="cal"?700:400,background:tab==="cal"?"#252830":"transparent",color:tab==="cal"?accent:"#64748B"}}>📅 カレンダー</button>
+            <button onClick={()=>setTab("progress")} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="progress"?700:400,background:tab==="progress"?"#252830":"transparent",color:tab==="progress"?"#A78BFA":"#64748B"}}>📊 進捗</button>
+          </div>
+        </div>
+        {tab==="cal"&&(<>
+          <div style={{display:"flex",alignItems:"center",padding:"2px 12px"}}>
+            <button onClick={()=>setMonth(new Date(yr,mo-1,1))} style={{background:"none",border:"none",color:"#64748B",cursor:"pointer",fontSize:18,padding:"0 8px 0 0"}}>‹</button>
+            <div style={{flex:1,textAlign:"center",fontWeight:700,fontSize:12}}>{yr}年 {MONTH_JP[mo]}</div>
+            <button onClick={()=>setMonth(new Date(yr,mo+1,1))} style={{background:"none",border:"none",color:"#64748B",cursor:"pointer",fontSize:18,padding:"0 0 0 8px"}}>›</button>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:`repeat(7,${CELL}px)`,justifyContent:"center"}}>
+            {DAY_JP.map((d,i)=>(<div key={d} style={{textAlign:"center",fontSize:9,fontWeight:700,width:CELL,paddingBottom:1,color:i===0?"#EF4444":i===6?"#60A5FA":"#64748B"}}>{d}</div>))}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:`repeat(7,${CELL}px)`,justifyContent:"center",paddingBottom:5}}>
+            {Array.from({length:fd}).map((_,i)=><div key={`e${i}`} style={{width:CELL,height:CELL}}/>)}
+            {Array.from({length:dim}).map((_,i)=>{
+              const day=i+1;
+              const dk=`${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+              const dt=(data[dk]||{}).type,col=dt?DAY_TYPES[dt].color:null;
+              const isT=dk===today,isS=dk===selDate;
+              const hasBody=!!(data[dk]?.body?.weight);
+              return(<div key={day} onClick={()=>setSelDate(dk)} style={{width:CELL,height:CELL,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",cursor:"pointer",borderRadius:6,background:isS?(col?`${col}22`:"#1E2028"):"transparent",border:isT?`2px solid #F97316`:isS?`2px solid ${col||"#60A5FA"}`:"2px solid transparent"}}>
+                <div style={{fontSize:11,fontWeight:isT?900:400,color:isT?"#F97316":"#E2E8F0",lineHeight:1}}>{day}</div>
+                <div style={{display:"flex",gap:2,marginTop:1}}>{dt&&<div style={{width:4,height:4,borderRadius:"50%",background:col}}/>}{hasBody&&<div style={{width:4,height:4,borderRadius:"50%",background:"#A78BFA"}}/>}</div>
+              </div>);
+            })}
+          </div>
+        </>)}
+      </div>
+
+      {/* Content */}
+      {tab==="progress"?(
+        <div style={{flex:1,overflowY:"auto",padding:"10px 12px",WebkitOverflowScrolling:"touch"}}>
+          <ProgressPage data={data} goals={goals} updateGoals={updateGoals}/>
+        </div>
+      ):(
+        <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
+          <div style={{background:"#111318",padding:"5px 12px",display:"flex",alignItems:"center",gap:6,flexShrink:0,borderBottom:"1px solid #1E2028"}}>
+            <div>
+              <span style={{fontSize:13,fontWeight:800}}>{selObj.getMonth()+1}月{selObj.getDate()}日</span>
+              <span style={{fontSize:10,color:"#64748B",marginLeft:5}}>({DAY_JP[selObj.getDay()]}){selDate===today?" · 今日":""}</span>
+            </div>
+            <div style={{display:"flex",gap:4,marginLeft:"auto"}}>
+              {Object.entries(DAY_TYPES).map(([k,v])=>(<button key={k} onClick={()=>updateSel({type:k})} style={{padding:"3px 7px",borderRadius:5,fontSize:10,cursor:"pointer",border:`1px solid ${dayType===k?v.color:"#252830"}`,background:dayType===k?v.bg:"transparent",color:dayType===k?v.color:"#64748B",fontWeight:dayType===k?700:400}}>{v.icon} {v.label}</button>))}
+            </div>
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",background:"#111318",borderBottom:"1px solid #1E2028",flexShrink:0}}>
+            {[{id:"meal",label:"食事",icon:"🍽"},{id:"training",label:"トレーニング",icon:"🏋️"},{id:"body",label:"体組成",icon:"📊"}].map(t=>(<button key={t.id} onClick={()=>setPanel(t.id)} style={{padding:"8px 0",background:"none",border:"none",cursor:"pointer",borderBottom:panel===t.id?`2px solid ${accent}`:"2px solid transparent",color:panel===t.id?accent:"#64748B",fontWeight:panel===t.id?700:400,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><span>{t.icon}</span><span>{t.label}</span></button>))}
+          </div>
+          <div style={{flex:1,overflowY:"auto",padding:"10px 12px",WebkitOverflowScrolling:"touch"}}>
+            {panel==="meal"     &&<MealPanel     dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent}/>}
+            {panel==="training" &&<TrainingPanel dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent} goals={goals}/>}
+            {panel==="body"     &&<BodyPanel     selDate={selDate} allData={data}    updateDay={updateSel} accent={accent}/>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

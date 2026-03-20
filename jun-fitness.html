@@ -431,7 +431,7 @@ function ProgressPage({data,goals,updateGoals}){
 
             <div style={{background:"#0D0F14",border:"1px solid #252830",borderRadius:10,padding:12,marginBottom:12}}>
               <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",marginBottom:8}}>月別保存枚数</div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
                 {Object.keys(photoMonths).sort().slice(-6).map(mk=>(
                   <div key={mk} style={{background:"#111318",border:"1px solid #252830",borderRadius:8,padding:"10px 6px",textAlign:"center"}}>
                     <div style={{fontSize:10,color:"#64748B",marginBottom:4}}>{mk.replace("-","/")}</div>
@@ -743,7 +743,7 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
           value={draftNote}
           onChange={e=>setDraftNote(e.target.value)}
           placeholder="メモ（体の変化、角度、時間帯など）"
-          style={{width:"100%",minHeight:52,background:"#0D0F14",border:"1px solid #252830",borderRadius:8,color:"#CBD5E1",fontSize:12,padding:10,resize:"vertical",boxSizing:"border-box",marginBottom:10"}}
+          style={{width:"100%",minHeight:52,background:"#0D0F14",border:"1px solid #252830",borderRadius:8,color:"#CBD5E1",fontSize:12,padding:10,resize:"vertical",boxSizing:"border-box",marginBottom:10}}
         />
 
         <div style={{display:"flex",gap:8,marginBottom:8}}>
@@ -876,7 +876,7 @@ function App(){
 
       {/* Content */}
       {tab==="progress"?(
-        <div style={{flex:1,overflowY:"auto",padding:"10px 12px",WebkitOverflowScrolling:"touch"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"10px 12px calc(10px + env(safe-area-inset-bottom))",WebkitOverflowScrolling:"touch"}}>
           <ProgressPage data={data} goals={goals} updateGoals={updateGoals}/>
         </div>
       ):(
@@ -893,7 +893,7 @@ function App(){
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:"#111318",borderBottom:"1px solid #1E2028",flexShrink:0}}>
             {[{id:"meal",label:"食事",icon:"🍽"},{id:"training",label:"トレーニング",icon:"🏋️"},{id:"body",label:"体組成",icon:"📊"},{id:"photo",label:"写真",icon:"📸"}].map(t=>(<button key={t.id} onClick={()=>setPanel(t.id)} style={{padding:"8px 0",background:"none",border:"none",cursor:"pointer",borderBottom:panel===t.id?`2px solid ${accent}`:"2px solid transparent",color:panel===t.id?accent:"#64748B",fontWeight:panel===t.id?700:400,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><span>{t.icon}</span><span>{t.label}</span></button>))}
           </div>
-          <div style={{flex:1,overflowY:"auto",padding:"10px 12px",WebkitOverflowScrolling:"touch"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"10px 12px calc(10px + env(safe-area-inset-bottom))",WebkitOverflowScrolling:"touch"}}>
             {panel==="meal"     &&<MealPanel     dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent}/>}
             {panel==="training" &&<TrainingPanel dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent} goals={goals}/>}
             {panel==="body"     &&<BodyPanel     selDate={selDate} allData={data}    updateDay={updateSel} accent={accent}/>}

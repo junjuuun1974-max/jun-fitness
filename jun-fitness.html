@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <meta name="apple-mobile-web-app-title" content="JUN FITNESS"/>
 <title>JUN FITNESS</title>
 <style>
@@ -14,7 +14,6 @@
   input[type=number]{-moz-appearance:textfield;}
   ::-webkit-scrollbar{display:none;}
   textarea{font-family:inherit;}
-  /* iPhone Safe Area */
 </style>
 </head>
 <body>
@@ -595,10 +594,10 @@ function App(){
   const selObj=new Date(selDate+"T00:00:00");
   const CELL=34;
 
-  if(!ready)return(<div style={{background:"#0D0F14",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748B"}}>読み込み中...</div>);
+  if(!ready)return(<div style={{background:"#0D0F14",height:"100dvh",paddingTop:"env(safe-area-inset-top)",paddingBottom:"env(safe-area-inset-bottom)",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748B"}}>読み込み中...</div>);
 
   return(
-    <div style={{background:"#0D0F14",height:"100%",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"'Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif",color:"#E2E8F0"}}>
+    <div style={{background:"#0D0F14",height:"100dvh",paddingTop:"env(safe-area-inset-top)",paddingBottom:"env(safe-area-inset-bottom)",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"'Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif",color:"#E2E8F0"}}>
 
       {/* Header */}
       <div style={{flexShrink:0,background:"#111318",borderBottom:`2px solid ${tab==="progress"?"#A78BFA":accent}44`}}>
@@ -637,7 +636,7 @@ function App(){
 
       {/* Content */}
       {tab==="progress"?(
-        <div style={{flex:1,overflowY:"auto",padding:"10px 12px",WebkitOverflowScrolling:"touch"}}>
+        <div style={{flex:1,overflowY:"auto",padding:"10px 12px calc(10px + env(safe-area-inset-bottom))",WebkitOverflowScrolling:"touch"}}>
           <ProgressPage data={data} goals={goals} updateGoals={updateGoals}/>
         </div>
       ):(
@@ -654,7 +653,7 @@ function App(){
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",background:"#111318",borderBottom:"1px solid #1E2028",flexShrink:0}}>
             {[{id:"meal",label:"食事",icon:"🍽"},{id:"training",label:"トレーニング",icon:"🏋️"},{id:"body",label:"体組成",icon:"📊"}].map(t=>(<button key={t.id} onClick={()=>setPanel(t.id)} style={{padding:"8px 0",background:"none",border:"none",cursor:"pointer",borderBottom:panel===t.id?`2px solid ${accent}`:"2px solid transparent",color:panel===t.id?accent:"#64748B",fontWeight:panel===t.id?700:400,fontSize:12,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><span>{t.icon}</span><span>{t.label}</span></button>))}
           </div>
-          <div style={{flex:1,overflowY:"auto",padding:"10px 12px",WebkitOverflowScrolling:"touch"}}>
+          <div style={{flex:1,overflowY:"auto",padding:"10px 12px calc(10px + env(safe-area-inset-bottom))",WebkitOverflowScrolling:"touch"}}>
             {panel==="meal"     &&<MealPanel     dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent}/>}
             {panel==="training" &&<TrainingPanel dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent} goals={goals}/>}
             {panel==="body"     &&<BodyPanel     selDate={selDate} allData={data}    updateDay={updateSel} accent={accent}/>}

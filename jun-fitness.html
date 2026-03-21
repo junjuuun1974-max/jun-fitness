@@ -21,6 +21,53 @@
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
 <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script>
+window.JUN_MENU_MASTER={
+  version:"2026-03-21",
+  foods:[
+    {id:"f_chicken",name:"鶏胸肉",category:"高たんぱく",tips:"脂質が低く、主菜の軸にしやすい"},
+    {id:"f_egg",name:"全卵",category:"高たんぱく",tips:"朝食に使いやすい"},
+    {id:"f_whey",name:"ホエイプロテイン",category:"高たんぱく",tips:"トレ後の定番"},
+    {id:"f_soy",name:"ソイプロテイン",category:"高たんぱく",tips:"就寝前にも合わせやすい"},
+    {id:"f_yogurt",name:"ギリシャヨーグルト",category:"高たんぱく",tips:"間食向き"},
+    {id:"f_tuna",name:"ツナ缶",category:"高たんぱく",tips:"保存しやすい"},
+    {id:"f_mackerel",name:"サバ缶",category:"高たんぱく",tips:"脂質も取りたい日に便利"},
+    {id:"f_rice",name:"白米",category:"炭水化物",tips:"運動前後に合わせやすい"},
+    {id:"f_oats",name:"オートミール",category:"炭水化物",tips:"朝食向き"},
+    {id:"f_banana",name:"バナナ",category:"炭水化物",tips:"間食・トレ前向き"},
+    {id:"f_sweetpotato",name:"さつまいも",category:"炭水化物",tips:"腹持ちが良い"},
+    {id:"f_bread",name:"全粒粉パン",category:"炭水化物",tips:"手軽に足しやすい"},
+    {id:"f_avocado",name:"アボカド",category:"脂質",tips:"良質な脂質源"},
+    {id:"f_nuts",name:"ミックスナッツ",category:"脂質",tips:"少量で脂質補給"},
+    {id:"f_olive",name:"オリーブオイル",category:"脂質",tips:"調整用に便利"}
+  ],
+  menus:[
+    {id:"m_whey_1",name:"ホエイプロテイン 1杯",mealTypes:["b","pw","po","bed"],p:24,c:3,f:2},
+    {id:"m_soy_1",name:"ソイプロテイン 1杯",mealTypes:["b","bed"],p:20,c:4,f:2},
+    {id:"m_pro_yogurt",name:"プロテインヨーグルト 1個",mealTypes:["b","bed"],p:15,c:10,f:0},
+    {id:"m_egg_2",name:"全卵 2個",mealTypes:["b","l","d"],p:12,c:0,f:10},
+    {id:"m_oats_50",name:"オートミール 50g",mealTypes:["b"],p:6,c:34,f:3},
+    {id:"m_oats_80",name:"オートミール 80g",mealTypes:["b"],p:10,c:55,f:5},
+    {id:"m_banana_1",name:"バナナ 1本",mealTypes:["b","pw","po"],p:1,c:27,f:0},
+    {id:"m_rice_100",name:"白米 100g",mealTypes:["b","l","d","pw","po"],p:3,c:37,f:0},
+    {id:"m_rice_150",name:"白米 150g",mealTypes:["b","l","d","pw","po"],p:4,c:56,f:0},
+    {id:"m_rice_220",name:"白米 220g",mealTypes:["pw","po"],p:6,c:81,f:1},
+    {id:"m_chicken_150",name:"鶏胸肉 150g",mealTypes:["l","d"],p:33,c:0,f:2},
+    {id:"m_chicken_200",name:"鶏胸肉 200g",mealTypes:["l","d"],p:44,c:0,f:3},
+    {id:"m_saladchicken_1",name:"サラダチキン 1個",mealTypes:["l","pw","po"],p:24,c:1,f:1},
+    {id:"m_tuna_1",name:"ツナ缶 1缶",mealTypes:["l","d"],p:16,c:0,f:1},
+    {id:"m_mackerel_1",name:"サバ缶 1缶",mealTypes:["l","d"],p:20,c:0,f:14},
+    {id:"m_salmon_150",name:"鮭 150g",mealTypes:["l","d"],p:30,c:0,f:10},
+    {id:"m_sweetpotato_100",name:"さつまいも 100g",mealTypes:["b","l","d"],p:1,c:30,f:0},
+    {id:"m_sweetpotato_150",name:"さつまいも 150g",mealTypes:["b","l","d"],p:2,c:45,f:0},
+    {id:"m_natto_1",name:"納豆 1パック",mealTypes:["b","l","d"],p:8,c:5,f:5},
+    {id:"m_tofu_150",name:"木綿豆腐 150g",mealTypes:["l","d"],p:10,c:3,f:7},
+    {id:"m_avocado_half",name:"アボカド 1/2個",mealTypes:["l","d"],p:1,c:4,f:11},
+    {id:"m_nuts_20",name:"ミックスナッツ 20g",mealTypes:["b","d","bed"],p:4,c:4,f:12}
+  ]
+};
+
+</script>
 <script type="text/babel">
 const{useState,useEffect,useRef,useCallback}=React;
 
@@ -73,9 +120,52 @@ function loadImageToDataURL(file,maxSide=1600,quality=0.82){
 
 const makeId=(prefix="id")=>`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
 const numOr0=(v)=>{const n=parseFloat(v);return isNaN(n)?0:n;};
+const calcKcalFromPFC=(p,c,f)=>Math.round((numOr0(p)*4)+(numOr0(c)*4)+(numOr0(f)*9));
+
+const FALLBACK_MENU_MASTER={
+  foods:[
+    {id:"f_chicken",name:"鶏胸肉",category:"高たんぱく",tips:"脂質が低く、主菜に使いやすい"},
+    {id:"f_egg",name:"全卵",category:"高たんぱく",tips:"手軽でビタミンも取りやすい"},
+    {id:"f_whey",name:"ホエイプロテイン",category:"高たんぱく",tips:"トレ後に使いやすい"},
+    {id:"f_yogurt",name:"ギリシャヨーグルト",category:"高たんぱく",tips:"間食にも向く"},
+    {id:"f_tuna",name:"ツナ缶",category:"高たんぱく",tips:"保存しやすい"},
+    {id:"f_rice",name:"白米",category:"炭水化物",tips:"運動前後の補給に使いやすい"},
+    {id:"f_oats",name:"オートミール",category:"炭水化物",tips:"朝食の定番"},
+    {id:"f_banana",name:"バナナ",category:"炭水化物",tips:"消化が軽く間食向き"},
+    {id:"f_sweetpotato",name:"さつまいも",category:"炭水化物",tips:"腹持ちが良い"},
+    {id:"f_avocado",name:"アボカド",category:"脂質",tips:"良質な脂質源"},
+    {id:"f_nuts",name:"ミックスナッツ",category:"脂質",tips:"少量で脂質補給"},
+    {id:"f_salmon",name:"鮭",category:"高たんぱく",tips:"脂質とたんぱく質を両立"},
+  ],
+  menus:[
+    {id:"m_whey_1",name:"ホエイプロテイン 1杯",mealTypes:["b","pw","po","bed"],p:24,c:3,f:2},
+    {id:"m_soy_1",name:"ソイプロテイン 1杯",mealTypes:["b","bed"],p:20,c:4,f:2},
+    {id:"m_egg_2",name:"全卵 2個",mealTypes:["b","l","d"],p:12,c:0,f:10},
+    {id:"m_oats_50",name:"オートミール 50g",mealTypes:["b"],p:6,c:34,f:3},
+    {id:"m_banana_1",name:"バナナ 1本",mealTypes:["b","pw","po"],p:1,c:27,f:0},
+    {id:"m_rice_150",name:"白米 150g",mealTypes:["b","l","d","pw","po"],p:4,c:56,f:0},
+    {id:"m_rice_200",name:"白米 200g",mealTypes:["l","d","pw","po"],p:5,c:74,f:1},
+    {id:"m_chicken_150",name:"鶏胸肉 150g",mealTypes:["l","d"],p:33,c:0,f:2},
+    {id:"m_chicken_200",name:"鶏胸肉 200g",mealTypes:["l","d"],p:44,c:0,f:3},
+    {id:"m_tuna_1",name:"ツナ缶 1缶",mealTypes:["l","d"],p:16,c:0,f:1},
+    {id:"m_yogurt_1",name:"ギリシャヨーグルト 1個",mealTypes:["b","bed"],p:10,c:5,f:0},
+    {id:"m_saladchicken_1",name:"サラダチキン 1個",mealTypes:["l","pw","po"],p:24,c:1,f:1},
+    {id:"m_sweetpotato_150",name:"さつまいも 150g",mealTypes:["b","l","d"],p:2,c:45,f:0},
+    {id:"m_salmon_150",name:"鮭 150g",mealTypes:["l","d"],p:30,c:0,f:10},
+    {id:"m_mackerelcan_1",name:"サバ缶 1缶",mealTypes:["l","d"],p:20,c:0,f:14},
+    {id:"m_natto_1",name:"納豆 1パック",mealTypes:["b","l","d"],p:8,c:5,f:5},
+    {id:"m_tofu_150",name:"木綿豆腐 150g",mealTypes:["l","d"],p:10,c:3,f:7},
+    {id:"m_avocado_half",name:"アボカド 1/2個",mealTypes:["l","d"],p:1,c:4,f:11},
+    {id:"m_nuts_20",name:"ミックスナッツ 20g",mealTypes:["b","d","bed"],p:4,c:4,f:12},
+  ]
+};
+const MENU_MASTER=window.JUN_MENU_MASTER||FALLBACK_MENU_MASTER;
+const MENU_MASTER_MAP=(MENU_MASTER.menus||[]).reduce((acc,item)=>{acc[item.id]=item;return acc;},{});
+const getMenuOptionsForMeal=(mealId)=>(MENU_MASTER.menus||[]).filter(item=>!item.mealTypes||item.mealTypes.includes(mealId));
+const recommendFoodGroups=(MENU_MASTER.foods||[]).reduce((acc,item)=>{const key=item.category||"その他";(acc[key]=acc[key]||[]).push(item);return acc;},{});
 
 function makeDefaultMealEntry(meal){
-  return {id:makeId("mi"),name:meal.items||meal.label,p:meal.p||0,c:meal.c||0,f:meal.f||0,kcal:meal.kcal||0};
+  return {id:makeId("mi"),name:meal.items||meal.label,p:meal.p||0,c:meal.c||0,f:meal.f||0,kcal:calcKcalFromPFC(meal.p,meal.c,meal.f)};
 }
 function getMealEntries(dayData,dayType,meal){
   const entries=((dayData.mealEntries||{})[meal.id]||[]).map(it=>({
@@ -84,14 +174,14 @@ function getMealEntries(dayData,dayType,meal){
     p:numOr0(it.p),
     c:numOr0(it.c),
     f:numOr0(it.f),
-    kcal:numOr0(it.kcal),
+    kcal:calcKcalFromPFC(it.p,it.c,it.f),
   }));
   if(entries.length>0)return entries;
   return [makeDefaultMealEntry(meal)];
 }
 function calcMealTotals(entries){
   return (entries||[]).reduce((acc,it)=>{
-    acc.p+=numOr0(it.p);acc.c+=numOr0(it.c);acc.f+=numOr0(it.f);acc.kcal+=numOr0(it.kcal);return acc;
+    acc.p+=numOr0(it.p);acc.c+=numOr0(it.c);acc.f+=numOr0(it.f);acc.kcal+=calcKcalFromPFC(it.p,it.c,it.f);return acc;
   },{p:0,c:0,f:0,kcal:0});
 }
 function calcDayNutrition(dayData,dayType){
@@ -688,26 +778,37 @@ function TrainingPanel({dayType,dayData,updateDay,accent,goals}){
 }
 
 // ── MealCard / MealPanel ──────────────────────────────────
-function MealItemRow({item,onChange,onDelete}){
+function MealItemRow({item,onChange,onDelete,mealId}){
   const inputStyle={width:"100%",padding:"8px 7px",background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:12,boxSizing:"border-box",outline:"none"};
+  const calculatedKcal=calcKcalFromPFC(item.p,item.c,item.f);
+  const options=getMenuOptionsForMeal(mealId);
+  const applyMasterMenu=(menuId)=>{
+    const src=MENU_MASTER_MAP[menuId];
+    if(!src){onChange({...item,masterMenuId:""});return;}
+    onChange({...item,masterMenuId:menuId,name:src.name,p:src.p,c:src.c,f:src.f,kcal:calcKcalFromPFC(src.p,src.c,src.f)});
+  };
   const numInput=(key,color,ph)=>(
     <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false"
       value={item[key]??""}
-      onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))onChange({...item,[key]:v});}}
+      onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))onChange({...item,[key]:v,kcal:calcKcalFromPFC(key==="p"?v:item.p,key==="c"?v:item.c,key==="f"?v:item.f),masterMenuId:item.masterMenuId||"custom"});}}
       placeholder={ph}
       style={{...inputStyle,textAlign:"center",fontFamily:"monospace",fontWeight:700,color}}/>
   );
   return(
     <div style={{background:"#111318",border:"1px solid #252830",borderRadius:8,padding:8,marginBottom:8}}>
-      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
-        <input value={item.name||""} onChange={e=>onChange({...item,name:e.target.value})} placeholder="メニュー名" style={{...inputStyle,flex:1}}/>
+      <div style={{display:"grid",gridTemplateColumns:"1.1fr 1.4fr auto",gap:8,alignItems:"center",marginBottom:8}}>
+        <select value={item.masterMenuId||""} onChange={e=>applyMasterMenu(e.target.value)} style={{...inputStyle,background:"#101522",color:item.masterMenuId?"#93C5FD":"#94A3B8"}}>
+          <option value="">管理メニューから選択</option>
+          {options.map(opt=><option key={opt.id} value={opt.id}>{opt.name}</option>)}
+        </select>
+        <input value={item.name||""} onChange={e=>onChange({...item,name:e.target.value,masterMenuId:item.masterMenuId||"custom"})} placeholder="メニュー名" style={{...inputStyle,flex:1}}/>
         <button onClick={onDelete} style={{padding:"8px 10px",borderRadius:7,background:"#2A1215",border:"1px solid #5B2028",color:"#FCA5A5",fontSize:11,cursor:"pointer"}}>削除</button>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
         <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>P(g)</div>{numInput("p","#F97316","0")}</div>
         <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>C(g)</div>{numInput("c","#60A5FA","0")}</div>
         <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>F(g)</div>{numInput("f","#34D399","0")}</div>
-        <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>kcal</div>{numInput("kcal","#A78BFA","0")}</div>
+        <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>kcal(自動)</div><input type="text" value={calculatedKcal} readOnly style={{...inputStyle,textAlign:"center",fontFamily:"monospace",fontWeight:700,color:"#A78BFA",background:"#111827",border:"1px solid #334155"}}/></div>
       </div>
     </div>
   );
@@ -719,7 +820,7 @@ function MealCard({meal,entries,checked,onCheck,onEntriesChange,note,onNote,acce
   const isWarn=meal.warn?.startsWith("⚠️");
   const updateItem=(idx,next)=>onEntriesChange(entries.map((it,i)=>i===idx?next:it));
   const deleteItem=(idx)=>onEntriesChange(entries.filter((_,i)=>i!==idx));
-  const addItem=()=>onEntriesChange([...(entries||[]),{id:makeId("mi"),name:"",p:"",c:"",f:"",kcal:""}]);
+  const addItem=()=>onEntriesChange([...(entries||[]),{id:makeId("mi"),name:"",p:"",c:"",f:"",kcal:0}]);
   return(
     <div style={{background:"#161920",borderRadius:10,marginBottom:8,border:`1px solid ${checked?accent+"55":"#252830"}`,overflow:"hidden"}}>
       <div onClick={()=>setOpen(!open)} style={{padding:"11px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
@@ -745,7 +846,7 @@ function MealCard({meal,entries,checked,onCheck,onEntriesChange,note,onNote,acce
             <div style={{fontSize:11,fontWeight:700,color:"#94A3B8"}}>登録メニュー</div>
             <button onClick={addItem} style={{padding:"6px 10px",borderRadius:7,background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.3)",color:"#60A5FA",fontSize:11,cursor:"pointer"}}>＋ メニュー追加</button>
           </div>
-          {(entries||[]).map((item,idx)=><MealItemRow key={item.id||idx} item={item} onChange={next=>updateItem(idx,next)} onDelete={()=>deleteItem(idx)}/>)}
+          {(entries||[]).map((item,idx)=><MealItemRow key={item.id||idx} item={item} mealId={meal.id} onChange={next=>updateItem(idx,next)} onDelete={()=>deleteItem(idx)}/>)}
 
           <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginTop:8,marginBottom:8}}>
             {[{label:"P",val:`${Math.round(totals.p)}g`,color:"#F97316"},{label:"C",val:`${Math.round(totals.c)}g`,color:"#60A5FA"},{label:"F",val:`${Math.round(totals.f)}g`,color:"#34D399"},{label:"kcal",val:Math.round(totals.kcal),color:"#A78BFA"}].map(m=>(<div key={m.label} style={{background:"#0D0F14",borderRadius:8,padding:"9px 4px",textAlign:"center",border:"1px solid #252830"}}><div style={{fontSize:9,color:"#64748B",marginBottom:4}}>{m.label}</div><div style={{fontSize:14,fontWeight:900,color:m.color,fontFamily:"monospace"}}>{m.val}</div></div>))}
@@ -773,7 +874,13 @@ function MealPanel({dayType,dayData,updateDay,accent}){
         <BarLine value={done} max={meals.length} color={accent}/>
         {done===meals.length&&<span style={{fontSize:11,color:"#34D399",flexShrink:0}}>✓</span>}
       </div>
-      <div style={{fontSize:10,color:"#64748B",marginBottom:12}}>メニューごとに栄養素と摂取カロリーを入力できます。各食事と1日の合計は自動集計されます。</div>
+      <div style={{fontSize:10,color:"#64748B",marginBottom:12}}>管理メニューから選ぶと、PFCとkcalが自動入力されます。必要に応じて数値は微調整できます。</div>
+      <div style={{background:"#161920",borderRadius:10,padding:12,marginBottom:12,border:"1px solid #252830"}}>
+        <div style={{fontSize:11,fontWeight:700,color:"#94A3B8",marginBottom:8}}>よく使う食材の候補</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:6,rowGap:8}}>
+          {Object.entries(recommendFoodGroups).map(([group,items])=>(<div key={group} style={{display:"flex",alignItems:"center",gap:4,flexWrap:"wrap"}}><span style={{fontSize:10,color:"#64748B"}}>{group}</span>{items.slice(0,4).map(it=><Chip key={it.id} color={group==="高たんぱく"?"#F97316":group==="炭水化物"?"#60A5FA":"#34D399"}>{it.name}</Chip>)}</div>))}
+        </div>
+      </div>
       {meals.map(m=><MealCard key={m.id} meal={m} entries={getMealEntries(dayData,dayType,m)} checked={!!checks[m.id]} onCheck={v=>updateDay({mealChecks:{...checks,[m.id]:v}})} onEntriesChange={v=>saveEntries(m.id,v)} note={notes[m.id]} onNote={v=>updateDay({mealNotes:{...notes,[m.id]:v}})} accent={accent}/>)}
     </div>
   );

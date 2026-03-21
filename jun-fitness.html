@@ -978,36 +978,46 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
         </div>
       </div>
 
-      {cameraOpen&&(
-        <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.86)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
-          <div style={{width:"100%",maxWidth:420,background:"#111318",border:"1px solid #252830",borderRadius:14,padding:14}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-              <div style={{fontSize:12,fontWeight:700,color:"#E2E8F0"}}>📷 10秒タイマー撮影</div>
-              <button onClick={closeCameraModal} style={{padding:"6px 10px",borderRadius:7,background:"#252830",border:"1px solid #374151",color:"#CBD5E1",fontSize:11,cursor:"pointer"}}>閉じる</button>
+      {cameraOpen&&ReactDOM.createPortal(
+        <div style={{position:"fixed",top:0,left:0,right:0,bottom:0,width:"100vw",height:"100dvh",zIndex:99999,background:"rgba(0,0,0,0.96)",display:"flex",flexDirection:"column",paddingTop:"max(12px, env(safe-area-inset-top))",paddingRight:"max(12px, env(safe-area-inset-right))",paddingBottom:"max(12px, env(safe-area-inset-bottom))",paddingLeft:"max(12px, env(safe-area-inset-left))",boxSizing:"border-box",overflow:"hidden"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10,padding:"4px 2px 12px",flexShrink:0}}>
+            <div>
+              <div style={{fontSize:14,fontWeight:800,color:"#E2E8F0"}}>📷 10秒タイマー撮影</div>
+              <div style={{fontSize:11,color:"#94A3B8",marginTop:2}}>姿勢を整えて、そのまま待てば自動で保存します</div>
             </div>
-            <div style={{position:"relative",aspectRatio:"3 / 4",background:"#000",borderRadius:12,overflow:"hidden",border:"1px solid #252830"}}>
-              <video ref={videoRef} playsInline muted autoPlay style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
-              <div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.55)",padding:"6px 10px",borderRadius:999,color:"#fff",fontSize:12,fontWeight:700,border:"1px solid rgba(255,255,255,0.15)"}}>
-                自動撮影まで {countdown}秒
-              </div>
-              <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
-                <div style={{minWidth:112,height:112,borderRadius:"50%",background:"rgba(0,0,0,0.42)",backdropFilter:"blur(2px)",border:"2px solid rgba(255,255,255,0.22)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 10px 30px rgba(0,0,0,0.35)"}}>
-                  <div style={{fontSize:56,lineHeight:1,fontWeight:900,color:"#FFFFFF",textShadow:"0 4px 16px rgba(0,0,0,0.45)",fontVariantNumeric:"tabular-nums"}}>
-                    {countdown>0?countdown:"📸"}
-                  </div>
+            <button onClick={closeCameraModal} style={{padding:"8px 12px",borderRadius:10,background:"#252830",border:"1px solid #374151",color:"#CBD5E1",fontSize:12,fontWeight:700,cursor:"pointer",flexShrink:0}}>閉じる</button>
+          </div>
+
+          <div style={{position:"relative",flex:1,minHeight:0,background:"#000",borderRadius:18,overflow:"hidden",border:"1px solid #252830",boxShadow:"0 18px 50px rgba(0,0,0,0.4)"}}>
+            <video ref={videoRef} playsInline muted autoPlay style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",display:"block",background:"#000"}} />
+
+            <div style={{position:"absolute",top:14,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.52)",padding:"8px 14px",borderRadius:999,color:"#fff",fontSize:13,fontWeight:800,border:"1px solid rgba(255,255,255,0.16)",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",fontVariantNumeric:"tabular-nums",whiteSpace:"nowrap"}}>
+              自動撮影まで {countdown}秒
+            </div>
+
+            <div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",padding:"0 20px"}}>
+              <div style={{width:"min(46vw, 180px)",height:"min(46vw, 180px)",minWidth:120,minHeight:120,maxWidth:180,maxHeight:180,borderRadius:"50%",background:"rgba(0,0,0,0.34)",backdropFilter:"blur(3px)",WebkitBackdropFilter:"blur(3px)",border:"2px solid rgba(255,255,255,0.25)",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 12px 36px rgba(0,0,0,0.38)"}}>
+                <div style={{fontSize:"clamp(64px, 16vw, 96px)",lineHeight:1,fontWeight:900,color:"#FFFFFF",textShadow:"0 6px 24px rgba(0,0,0,0.55)",fontVariantNumeric:"tabular-nums"}}>
+                  {countdown>0?countdown:"📸"}
                 </div>
               </div>
-              <div style={{position:"absolute",bottom:12,left:"50%",transform:"translateX(-50%)",background:"rgba(0,0,0,0.45)",padding:"6px 12px",borderRadius:999,color:"#E2E8F0",fontSize:11,fontWeight:700,border:"1px solid rgba(255,255,255,0.12)",letterSpacing:"0.08em"}}>
-                {countdown>0?`${countdown} → ${Math.max(countdown-1,0)} → 撮影`:"撮影中..."}
-              </div>
             </div>
-            {cameraError?<div style={{fontSize:11,color:"#FCA5A5",marginTop:10,lineHeight:1.6}}>{cameraError}</div>:<div style={{fontSize:11,color:"#94A3B8",marginTop:10,lineHeight:1.6}}>ボタンを押してから10秒後に自動で保存します。姿勢を整えてお待ちください。</div>}
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
-              <button onClick={()=>{closeCameraModal();setTimeout(startTimedCamera,150);}} style={{padding:"10px 0",borderRadius:8,background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.35)",color:"#60A5FA",fontSize:12,fontWeight:700,cursor:"pointer"}}>やり直す</button>
-              <button onClick={captureFrame} style={{padding:"10px 0",borderRadius:8,background:"rgba(52,211,153,0.15)",border:"1px solid rgba(52,211,153,0.35)",color:"#6EE7B7",fontSize:12,fontWeight:700,cursor:"pointer"}}>今すぐ撮影</button>
+
+            <div style={{position:"absolute",bottom:16,left:"50%",transform:"translateX(-50%)",maxWidth:"calc(100% - 32px)",background:"rgba(0,0,0,0.5)",padding:"8px 14px",borderRadius:999,color:"#E2E8F0",fontSize:12,fontWeight:800,border:"1px solid rgba(255,255,255,0.14)",letterSpacing:"0.04em",whiteSpace:"nowrap",textOverflow:"ellipsis",overflow:"hidden",backdropFilter:"blur(6px)",WebkitBackdropFilter:"blur(6px)",fontVariantNumeric:"tabular-nums"}}>
+              {countdown>0?`${countdown} → ${Math.max(countdown-1,0)} → 撮影`:"撮影中..."}
             </div>
           </div>
-        </div>
+
+          {cameraError
+            ? <div style={{fontSize:12,color:"#FCA5A5",marginTop:12,lineHeight:1.6,flexShrink:0}}>{cameraError}</div>
+            : <div style={{fontSize:12,color:"#94A3B8",marginTop:12,lineHeight:1.6,flexShrink:0}}>10秒後に自動保存します。顔だけでなく、上半身または全身が入る距離に調整してください。</div>}
+
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:12,flexShrink:0}}>
+            <button onClick={()=>{closeCameraModal();setTimeout(startTimedCamera,180);}} style={{padding:"12px 0",borderRadius:12,background:"rgba(96,165,250,0.12)",border:"1px solid rgba(96,165,250,0.35)",color:"#60A5FA",fontSize:14,fontWeight:800,cursor:"pointer"}}>やり直す</button>
+            <button onClick={captureFrame} style={{padding:"12px 0",borderRadius:12,background:"rgba(52,211,153,0.16)",border:"1px solid rgba(52,211,153,0.35)",color:"#6EE7B7",fontSize:14,fontWeight:800,cursor:"pointer"}}>今すぐ撮影</button>
+          </div>
+        </div>,
+        document.body
       )}
 
       <div style={{background:"#161920",borderRadius:12,padding:14,border:"1px solid #252830"}}>

@@ -70,6 +70,38 @@ function loadImageToDataURL(file,maxSide=1600,quality=0.82){
 }
 
 
+
+const makeId=(prefix="id")=>`${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
+const numOr0=(v)=>{const n=parseFloat(v);return isNaN(n)?0:n;};
+
+function makeDefaultMealEntry(meal){
+  return {id:makeId("mi"),name:meal.items||meal.label,p:meal.p||0,c:meal.c||0,f:meal.f||0,kcal:meal.kcal||0};
+}
+function getMealEntries(dayData,dayType,meal){
+  const entries=((dayData.mealEntries||{})[meal.id]||[]).map(it=>({
+    id:it.id||makeId("mi"),
+    name:it.name||"",
+    p:numOr0(it.p),
+    c:numOr0(it.c),
+    f:numOr0(it.f),
+    kcal:numOr0(it.kcal),
+  }));
+  if(entries.length>0)return entries;
+  return [makeDefaultMealEntry(meal)];
+}
+function calcMealTotals(entries){
+  return (entries||[]).reduce((acc,it)=>{
+    acc.p+=numOr0(it.p);acc.c+=numOr0(it.c);acc.f+=numOr0(it.f);acc.kcal+=numOr0(it.kcal);return acc;
+  },{p:0,c:0,f:0,kcal:0});
+}
+function calcDayNutrition(dayData,dayType){
+  const meals=MEALS[dayType]||MEALS.rest;
+  return meals.reduce((acc,meal)=>{
+    const t=calcMealTotals(getMealEntries(dayData||{},dayType,meal));
+    acc.p+=t.p;acc.c+=t.c;acc.f+=t.f;acc.kcal+=t.kcal;
+    return acc;
+  },{p:0,c:0,f:0,kcal:0});
+}
 const DAY_TYPES={
   workout: {label:"筋トレ",    color:"#F97316",bg:"rgba(249,115,22,0.15)",icon:"🏋️"},
   rest:    {label:"非筋トレ",  color:"#60A5FA",bg:"rgba(96,165,250,0.15)",icon:"😴"},
@@ -120,7 +152,9 @@ const DAY_JP=["日","月","火","水","木","金","土"];
 const DEFAULT_GOALS={
   startDate:today,targetDate:"",
   weight:{start:77.2,target:72.0},fatPct:{start:27.9,target:12.0},muscleMass:{start:52.8,target:55.0},
-  workoutsPerWeek:3,note:"",
+  workoutsPerWeek:3,
+  nutrition:{protein:200,carbs:180,fat:55,kcal:2100},
+  note:"",
   exGoals:{row:100,leg:150,shoulder:50,chest:100,side:12,curl:32,press:null},
 };
 
@@ -244,6 +278,18 @@ function ProgressPage({data,goals,updateGoals}){
   photoEntries.forEach(p=>{const mk=getMonthKey(p.date);photoMonths[mk]=(photoMonths[mk]||0)+1;});
   const recentPhotos=photoEntries.slice(-8).reverse();
 
+  const nutritionDays=Object.entries(data).map(([dk,d])=>({date:dk,...calcDayNutrition(d,d.type||"rest")})).sort((a,b)=>a.date.localeCompare(b.date));
+  const nutritionToday=calcDayNutrition(data[today]||{},(data[today]?.type)||"rest");
+  const nutritionLatest=nutritionDays.length>0?nutritionDays[nutritionDays.length-1]:nutritionToday;
+  const nutrition7=nutritionDays.slice(-7);
+  const nutritionAvg7=nutrition7.length>0?{
+    p:nutrition7.reduce((a,v)=>a+v.p,0)/nutrition7.length,
+    c:nutrition7.reduce((a,v)=>a+v.c,0)/nutrition7.length,
+    f:nutrition7.reduce((a,v)=>a+v.f,0)/nutrition7.length,
+    kcal:nutrition7.reduce((a,v)=>a+v.kcal,0)/nutrition7.length,
+  }:{p:0,c:0,f:0,kcal:0};
+  const nutritionGoal=goals.nutrition||{protein:0,carbs:0,fat:0,kcal:0};
+
   const iStyle={width:"100%",padding:"8px 10px",background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:13,boxSizing:"border-box",outline:"none"};
 
   return(
@@ -282,11 +328,25 @@ function ProgressPage({data,goals,updateGoals}){
               style={{...iStyle,fontFamily:"monospace",fontWeight:700,textAlign:"center"}}/>
           </div>
           <div style={{marginBottom:12}}>
+            <div style={{fontSize:10,color:"#64748B",marginBottom:8}}>栄養目標（1日あたり）</div>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+              {[{key:"protein",label:"P(g)",color:"#F97316"},{key:"carbs",label:"C(g)",color:"#60A5FA"},{key:"fat",label:"F(g)",color:"#34D399"},{key:"kcal",label:"kcal",color:"#A78BFA"}].map(f=>(
+                <div key={f.key}>
+                  <div style={{fontSize:9,color:f.color,marginBottom:3,fontWeight:700}}>{f.label}</div>
+                  <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false"
+                    value={String((tmpGoals.nutrition||{})[f.key]??"")}
+                    onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))setTmpGoals({...tmpGoals,nutrition:{...(tmpGoals.nutrition||{}),[f.key]:v}});}}
+                    style={{...iStyle,color:f.color,fontFamily:"monospace",fontWeight:700,textAlign:"center"}}/>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{marginBottom:12}}>
             <div style={{fontSize:10,color:"#64748B",marginBottom:5}}>メモ</div>
             <textarea value={tmpGoals.note||""} onChange={e=>setTmpGoals({...tmpGoals,note:e.target.value})} placeholder="目標に向けての意気込みなど..." style={{...iStyle,minHeight:52,resize:"vertical"}}/>
           </div>
           <div style={{display:"flex",gap:8}}>
-            <button onClick={()=>{const parsed={...tmpGoals,weight:{start:parseFloat(tmpGoals.weight.start)||0,target:parseFloat(tmpGoals.weight.target)||0},fatPct:{start:parseFloat(tmpGoals.fatPct.start)||0,target:parseFloat(tmpGoals.fatPct.target)||0},muscleMass:{start:parseFloat(tmpGoals.muscleMass.start)||0,target:parseFloat(tmpGoals.muscleMass.target)||0},workoutsPerWeek:parseInt(tmpGoals.workoutsPerWeek)||3};updateGoals(parsed);setEditGoals(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#60A5FA",border:"none",color:"#000",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button>
+            <button onClick={()=>{const parsed={...tmpGoals,weight:{start:parseFloat(tmpGoals.weight.start)||0,target:parseFloat(tmpGoals.weight.target)||0},fatPct:{start:parseFloat(tmpGoals.fatPct.start)||0,target:parseFloat(tmpGoals.fatPct.target)||0},muscleMass:{start:parseFloat(tmpGoals.muscleMass.start)||0,target:parseFloat(tmpGoals.muscleMass.target)||0},workoutsPerWeek:parseInt(tmpGoals.workoutsPerWeek)||3,nutrition:{protein:parseFloat(tmpGoals.nutrition?.protein)||0,carbs:parseFloat(tmpGoals.nutrition?.carbs)||0,fat:parseFloat(tmpGoals.nutrition?.fat)||0,kcal:parseFloat(tmpGoals.nutrition?.kcal)||0}};updateGoals(parsed);setEditGoals(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#60A5FA",border:"none",color:"#000",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button>
             <button onClick={()=>setEditGoals(false)} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>閉じる</button>
           </div>
         </div>
@@ -349,6 +409,41 @@ function ProgressPage({data,goals,updateGoals}){
             </div>
           </div>);
         })}
+      </div>
+
+      <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #252830"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
+          <div style={{fontSize:12,fontWeight:700,color:"#94A3B8"}}>🍽 栄養サマリー</div>
+          <div style={{fontSize:10,color:"#64748B"}}>最新記録 {nutritionLatest.date?nutritionLatest.date.replaceAll("-","/"):"—"}</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
+          {[{label:"P",cur:nutritionLatest.p,goal:nutritionGoal.protein,color:"#F97316",unit:"g"},{label:"C",cur:nutritionLatest.c,goal:nutritionGoal.carbs,color:"#60A5FA",unit:"g"},{label:"F",cur:nutritionLatest.f,goal:nutritionGoal.fat,color:"#34D399",unit:"g"},{label:"kcal",cur:nutritionLatest.kcal,goal:nutritionGoal.kcal,color:"#A78BFA",unit:""}].map(m=>(
+            <div key={m.label} style={{background:"#0D0F14",borderRadius:9,padding:"10px 6px",textAlign:"center",border:"1px solid #252830"}}>
+              <div style={{fontSize:9,color:"#64748B",marginBottom:4}}>{m.label}</div>
+              <div style={{fontSize:16,fontWeight:900,color:m.color,fontFamily:"monospace"}}>{Math.round(m.cur)}{m.unit}</div>
+              <div style={{fontSize:9,color:"#64748B",marginTop:3}}>目標 {Math.round(m.goal)}{m.unit}</div>
+            </div>
+          ))}
+        </div>
+        {[{label:"タンパク質",cur:nutritionLatest.p,avg:nutritionAvg7.p,goal:nutritionGoal.protein,color:"#F97316",unit:"g"},
+          {label:"糖質",cur:nutritionLatest.c,avg:nutritionAvg7.c,goal:nutritionGoal.carbs,color:"#60A5FA",unit:"g"},
+          {label:"脂質",cur:nutritionLatest.f,avg:nutritionAvg7.f,goal:nutritionGoal.fat,color:"#34D399",unit:"g"},
+          {label:"摂取カロリー",cur:nutritionLatest.kcal,avg:nutritionAvg7.kcal,goal:nutritionGoal.kcal,color:"#A78BFA",unit:"kcal"}].map(m=>{
+            const pct=m.goal>0?Math.min(100,(m.cur/m.goal)*100):0;
+            return (
+              <div key={m.label} style={{marginBottom:10}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:3}}>
+                  <span style={{fontSize:11,color:"#94A3B8",fontWeight:600}}>{m.label}</span>
+                  <span style={{fontSize:10,color:"#64748B",fontFamily:"monospace"}}>
+                    <span style={{color:m.color,fontWeight:700}}>今日 {Math.round(m.cur)}{m.unit}</span>{" / "}
+                    7日平均 {Math.round(m.avg)}{m.unit}{" / "}
+                    目標 {Math.round(m.goal)}{m.unit}
+                  </span>
+                </div>
+                <div style={{height:6,background:"#252830",borderRadius:3}}><div style={{width:`${pct}%`,height:"100%",background:m.color,borderRadius:3,transition:"width 0.6s"}}/></div>
+              </div>
+            );
+          })}
       </div>
 
       <div style={{background:"#161920",borderRadius:12,padding:14,marginBottom:14,border:"1px solid #252830"}}>
@@ -593,16 +688,45 @@ function TrainingPanel({dayType,dayData,updateDay,accent,goals}){
 }
 
 // ── MealCard / MealPanel ──────────────────────────────────
-function MealCard({meal,checked,onCheck,note,onNote,accent}){
-  const[open,setOpen]=useState(false),[edit,setEdit]=useState(false),[val,setVal]=useState(note||"");
+function MealItemRow({item,onChange,onDelete}){
+  const inputStyle={width:"100%",padding:"8px 7px",background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:12,boxSizing:"border-box",outline:"none"};
+  const numInput=(key,color,ph)=>(
+    <input type="text" inputMode="decimal" pattern="[0-9.]*" autoComplete="off" autoCorrect="off" spellCheck="false"
+      value={item[key]??""}
+      onChange={e=>{const v=e.target.value;if(v===""||/^\d*\.?\d*$/.test(v))onChange({...item,[key]:v});}}
+      placeholder={ph}
+      style={{...inputStyle,textAlign:"center",fontFamily:"monospace",fontWeight:700,color}}/>
+  );
+  return(
+    <div style={{background:"#111318",border:"1px solid #252830",borderRadius:8,padding:8,marginBottom:8}}>
+      <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:8}}>
+        <input value={item.name||""} onChange={e=>onChange({...item,name:e.target.value})} placeholder="メニュー名" style={{...inputStyle,flex:1}}/>
+        <button onClick={onDelete} style={{padding:"8px 10px",borderRadius:7,background:"#2A1215",border:"1px solid #5B2028",color:"#FCA5A5",fontSize:11,cursor:"pointer"}}>削除</button>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6}}>
+        <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>P(g)</div>{numInput("p","#F97316","0")}</div>
+        <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>C(g)</div>{numInput("c","#60A5FA","0")}</div>
+        <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>F(g)</div>{numInput("f","#34D399","0")}</div>
+        <div><div style={{fontSize:9,color:"#64748B",marginBottom:3}}>kcal</div>{numInput("kcal","#A78BFA","0")}</div>
+      </div>
+    </div>
+  );
+}
+
+function MealCard({meal,entries,checked,onCheck,onEntriesChange,note,onNote,accent}){
+  const[open,setOpen]=useState(false),[editNote,setEditNote]=useState(false),[val,setVal]=useState(note||"");
+  const totals=calcMealTotals(entries);
   const isWarn=meal.warn?.startsWith("⚠️");
+  const updateItem=(idx,next)=>onEntriesChange(entries.map((it,i)=>i===idx?next:it));
+  const deleteItem=(idx)=>onEntriesChange(entries.filter((_,i)=>i!==idx));
+  const addItem=()=>onEntriesChange([...(entries||[]),{id:makeId("mi"),name:"",p:"",c:"",f:"",kcal:""}]);
   return(
     <div style={{background:"#161920",borderRadius:10,marginBottom:8,border:`1px solid ${checked?accent+"55":"#252830"}`,overflow:"hidden"}}>
       <div onClick={()=>setOpen(!open)} style={{padding:"11px 14px",display:"flex",alignItems:"center",gap:10,cursor:"pointer"}}>
         <div style={{fontSize:20,flexShrink:0}}>{meal.icon}</div>
         <div style={{flex:1,minWidth:0}}>
           <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,fontWeight:700}}>{meal.label}</span><span style={{fontSize:11,color:"#64748B",fontFamily:"monospace"}}>{meal.time}</span></div>
-          <div style={{fontSize:11,color:"#64748B",marginTop:2}}>{meal.kcal}kcal · P<span style={{color:"#F97316"}}>{meal.p}</span>g · C<span style={{color:"#60A5FA"}}>{meal.c}</span>g · F<span style={{color:"#34D399"}}>{meal.f}</span>g</div>
+          <div style={{fontSize:11,color:"#64748B",marginTop:2}}>{Math.round(totals.kcal)}kcal · P<span style={{color:"#F97316"}}>{Math.round(totals.p)}</span>g · C<span style={{color:"#60A5FA"}}>{Math.round(totals.c)}</span>g · F<span style={{color:"#34D399"}}>{Math.round(totals.f)}</span>g</div>
         </div>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           {note&&<div style={{width:6,height:6,borderRadius:"50%",background:"#F97316",flexShrink:0}}/>}
@@ -613,29 +737,44 @@ function MealCard({meal,checked,onCheck,note,onNote,accent}){
       {open&&(
         <div style={{padding:"0 14px 14px",borderTop:"1px solid #1E2028"}}>
           {meal.warn&&<div style={{padding:"7px 10px",borderRadius:7,marginTop:10,marginBottom:8,fontSize:12,background:isWarn?"rgba(239,68,68,0.1)":"rgba(52,211,153,0.1)",border:`1px solid ${isWarn?"rgba(239,68,68,0.3)":"rgba(52,211,153,0.3)"}`,color:isWarn?"#FCA5A5":"#6EE7B7"}}>{meal.warn}</div>}
-          <div style={{fontSize:13,color:"#CBD5E1",lineHeight:1.7,marginTop:10,marginBottom:10}}>{meal.items}</div>
+          <div style={{fontSize:10,color:"#64748B",marginTop:10,marginBottom:6}}>初期メニュー案</div>
+          <div style={{fontSize:12,color:"#CBD5E1",lineHeight:1.6,marginBottom:10}}>{meal.items}</div>
           {meal.supps.length>0&&<div style={{marginBottom:10}}><div style={{fontSize:10,color:"#64748B",marginBottom:5}}>💊 サプリ・薬</div><div style={{display:"flex",flexWrap:"wrap",gap:5}}>{meal.supps.map(s=><Chip key={s}>{s}</Chip>)}</div></div>}
-          {edit?(<div style={{marginTop:8}}><textarea value={val} onChange={e=>setVal(e.target.value)} placeholder="実際の摂取・メモ..." style={{width:"100%",minHeight:60,background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:13,padding:10,resize:"vertical",boxSizing:"border-box"}}/><div style={{display:"flex",gap:8,marginTop:8}}><button onClick={()=>{onNote(val);setEdit(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:accent,border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button><button onClick={()=>setEdit(false)} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>キャンセル</button></div></div>):(<button onClick={()=>setEdit(true)} style={{width:"100%",padding:"8px 0",borderRadius:7,background:"rgba(255,255,255,0.04)",border:"1px solid #252830",color:"#94A3B8",cursor:"pointer",fontSize:12,marginTop:4}}>{note?`📝 ${note.substring(0,50)}${note.length>50?"...":""}`:"+  メモを追加"}</button>)}
+
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,marginTop:8}}>
+            <div style={{fontSize:11,fontWeight:700,color:"#94A3B8"}}>登録メニュー</div>
+            <button onClick={addItem} style={{padding:"6px 10px",borderRadius:7,background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.3)",color:"#60A5FA",fontSize:11,cursor:"pointer"}}>＋ メニュー追加</button>
+          </div>
+          {(entries||[]).map((item,idx)=><MealItemRow key={item.id||idx} item={item} onChange={next=>updateItem(idx,next)} onDelete={()=>deleteItem(idx)}/>)}
+
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginTop:8,marginBottom:8}}>
+            {[{label:"P",val:`${Math.round(totals.p)}g`,color:"#F97316"},{label:"C",val:`${Math.round(totals.c)}g`,color:"#60A5FA"},{label:"F",val:`${Math.round(totals.f)}g`,color:"#34D399"},{label:"kcal",val:Math.round(totals.kcal),color:"#A78BFA"}].map(m=>(<div key={m.label} style={{background:"#0D0F14",borderRadius:8,padding:"9px 4px",textAlign:"center",border:"1px solid #252830"}}><div style={{fontSize:9,color:"#64748B",marginBottom:4}}>{m.label}</div><div style={{fontSize:14,fontWeight:900,color:m.color,fontFamily:"monospace"}}>{m.val}</div></div>))}
+          </div>
+
+          {editNote?(<div style={{marginTop:8}}><textarea value={val} onChange={e=>setVal(e.target.value)} placeholder="実際の摂取・メモ..." style={{width:"100%",minHeight:60,background:"#0D0F14",border:"1px solid #374151",borderRadius:7,color:"#E2E8F0",fontSize:13,padding:10,resize:"vertical",boxSizing:"border-box"}}/><div style={{display:"flex",gap:8,marginTop:8}}><button onClick={()=>{onNote(val);setEditNote(false);}} style={{flex:1,padding:"9px 0",borderRadius:7,background:accent,border:"none",color:"#fff",cursor:"pointer",fontSize:13,fontWeight:700}}>保存</button><button onClick={()=>setEditNote(false)} style={{flex:1,padding:"9px 0",borderRadius:7,background:"#252830",border:"none",color:"#94A3B8",cursor:"pointer",fontSize:13}}>キャンセル</button></div></div>):(<button onClick={()=>setEditNote(true)} style={{width:"100%",padding:"8px 0",borderRadius:7,background:"rgba(255,255,255,0.04)",border:"1px solid #252830",color:"#94A3B8",cursor:"pointer",fontSize:12,marginTop:4}}>{note?`📝 ${note.substring(0,50)}${note.length>50?"...":""}`:"+  メモを追加"}</button>)}
         </div>
       )}
     </div>
   );
 }
 function MealPanel({dayType,dayData,updateDay,accent}){
-  const meals=MEALS[dayType]||MEALS.rest,totals=TOTALS[dayType]||TOTALS.rest;
-  const checks=dayData.mealChecks||{},notes=dayData.mealNotes||{};
+  const meals=MEALS[dayType]||MEALS.rest;
+  const checks=dayData.mealChecks||{},notes=dayData.mealNotes||{},mealEntries=dayData.mealEntries||{};
+  const dayTotals=calcDayNutrition(dayData,dayType);
   const done=meals.filter(m=>checks[m.id]).length;
+  const saveEntries=(mealId,entries)=>updateDay({mealEntries:{...mealEntries,[mealId]:entries}});
   return(
     <div style={{paddingBottom:16}}>
       <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:12}}>
-        {[{label:"タンパク質",val:`${totals.p}g`,color:"#F97316"},{label:"糖質",val:`${totals.c}g`,color:"#60A5FA"},{label:"脂質",val:`${totals.f}g`,color:"#34D399"},{label:"kcal",val:totals.kcal,color:"#A78BFA"}].map(m=>(<div key={m.label} style={{background:"#161920",borderRadius:9,padding:"10px 4px",textAlign:"center",border:"1px solid #252830"}}><div style={{fontSize:9,color:"#64748B",marginBottom:4}}>{m.label}</div><div style={{fontSize:15,fontWeight:900,color:m.color,fontFamily:"monospace"}}>{m.val}</div></div>))}
+        {[{label:"タンパク質",val:`${Math.round(dayTotals.p)}g`,color:"#F97316"},{label:"糖質",val:`${Math.round(dayTotals.c)}g`,color:"#60A5FA"},{label:"脂質",val:`${Math.round(dayTotals.f)}g`,color:"#34D399"},{label:"kcal",val:Math.round(dayTotals.kcal),color:"#A78BFA"}].map(m=>(<div key={m.label} style={{background:"#161920",borderRadius:9,padding:"10px 4px",textAlign:"center",border:"1px solid #252830"}}><div style={{fontSize:9,color:"#64748B",marginBottom:4}}>{m.label}</div><div style={{fontSize:15,fontWeight:900,color:m.color,fontFamily:"monospace"}}>{m.val}</div></div>))}
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
         <span style={{fontSize:11,color:"#64748B",flexShrink:0}}>完了 {done}/{meals.length}</span>
         <BarLine value={done} max={meals.length} color={accent}/>
         {done===meals.length&&<span style={{fontSize:11,color:"#34D399",flexShrink:0}}>✓</span>}
       </div>
-      {meals.map(m=><MealCard key={m.id} meal={m} checked={!!checks[m.id]} onCheck={v=>updateDay({mealChecks:{...checks,[m.id]:v}})} note={notes[m.id]} onNote={v=>updateDay({mealNotes:{...notes,[m.id]:v}})} accent={accent}/>)}
+      <div style={{fontSize:10,color:"#64748B",marginBottom:12}}>メニューごとに栄養素と摂取カロリーを入力できます。各食事と1日の合計は自動集計されます。</div>
+      {meals.map(m=><MealCard key={m.id} meal={m} entries={getMealEntries(dayData,dayType,m)} checked={!!checks[m.id]} onCheck={v=>updateDay({mealChecks:{...checks,[m.id]:v}})} onEntriesChange={v=>saveEntries(m.id,v)} note={notes[m.id]} onNote={v=>updateDay({mealNotes:{...notes,[m.id]:v}})} accent={accent}/>)}
     </div>
   );
 }
@@ -682,10 +821,26 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
   const [uploading,setUploading]=useState(false);
   const [activeType,setActiveType]=useState("front");
   const [draftNote,setDraftNote]=useState("");
-  const inputRef=useRef(null);
+  const [cameraOpen,setCameraOpen]=useState(false);
+  const [countdown,setCountdown]=useState(10);
+  const [cameraError,setCameraError]=useState("");
+  const cameraTimerRef=useRef(null);
   const libraryInputRef=useRef(null);
+  const videoRef=useRef(null);
+  const canvasRef=useRef(null);
+  const streamRef=useRef(null);
 
   const savePhotos=(next)=>updateDay({photos:next});
+
+  const stopCamera=useCallback(()=>{
+    if(cameraTimerRef.current){clearInterval(cameraTimerRef.current);cameraTimerRef.current=null;}
+    if(streamRef.current){
+      streamRef.current.getTracks().forEach(track=>track.stop());
+      streamRef.current=null;
+    }
+  },[]);
+
+  useEffect(()=>()=>stopCamera(),[stopCamera]);
 
   const addFiles=async(files)=>{
     const list=Array.from(files||[]).filter(f=>f&&f.type&&f.type.startsWith("image/"));
@@ -706,7 +861,7 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
       }
       savePhotos([...(photos||[]),...made]);
       setDraftNote("");
-      if(inputRef.current)inputRef.current.value="";
+      if(libraryInputRef.current)libraryInputRef.current.value="";
     }catch(err){
       alert("写真の保存に失敗しました");
     }finally{
@@ -714,16 +869,70 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
     }
   };
 
-  const deletePhoto=(id)=>{
-    const next=photos.filter(p=>p.id!==id);
-    savePhotos(next);
+  const captureFrame=useCallback(()=>{
+    const video=videoRef.current;
+    const canvas=canvasRef.current;
+    if(!video||!canvas)return;
+    const vw=video.videoWidth||1080;
+    const vh=video.videoHeight||1440;
+    canvas.width=vw;
+    canvas.height=vh;
+    const ctx=canvas.getContext("2d");
+    ctx.drawImage(video,0,0,vw,vh);
+    const src=canvas.toDataURL("image/jpeg",0.9);
+    savePhotos([...(photos||[]),{
+      id:`p_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+      type:activeType,
+      note:draftNote,
+      src,
+      createdAt:new Date().toISOString(),
+      name:`camera_${selDate}.jpg`,
+    }]);
+    setDraftNote("");
+    stopCamera();
+    setCameraOpen(false);
+    setCountdown(10);
+  },[photos,activeType,draftNote,selDate,stopCamera]);
+
+  const startTimedCamera=async()=>{
+    setCameraError("");
+    setCameraOpen(true);
+    setCountdown(10);
+    try{
+      const stream=await navigator.mediaDevices.getUserMedia({
+        video:{facingMode:{ideal:"user"},width:{ideal:1080},height:{ideal:1440}},
+        audio:false
+      });
+      streamRef.current=stream;
+      if(videoRef.current){
+        videoRef.current.srcObject=stream;
+        await videoRef.current.play().catch(()=>{});
+      }
+      cameraTimerRef.current=setInterval(()=>{
+        setCountdown(prev=>{
+          if(prev<=1){
+            clearInterval(cameraTimerRef.current);
+            cameraTimerRef.current=null;
+            setTimeout(()=>captureFrame(),100);
+            return 0;
+          }
+          return prev-1;
+        });
+      },1000);
+    }catch(err){
+      setCameraError("カメラを起動できませんでした。ライブラリから追加をご利用ください。");
+      stopCamera();
+    }
   };
 
-  const updatePhoto=(id,patch)=>{
-    const next=photos.map(p=>p.id===id?{...p,...patch}:p);
-    savePhotos(next);
+  const closeCameraModal=()=>{
+    stopCamera();
+    setCameraOpen(false);
+    setCountdown(10);
   };
 
+  const deletePhoto=(id)=>savePhotos(photos.filter(p=>p.id!==id));
+  const updatePhoto=(id,patch)=>savePhotos(photos.map(p=>p.id===id?{...p,...patch}:p));
   const typeCounts=PHOTO_TYPES.reduce((acc,t)=>{acc[t.id]=photos.filter(p=>p.type===t.id).length;return acc;},{});
 
   return(
@@ -748,22 +957,13 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
         />
 
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-          <button onClick={()=>inputRef.current&&inputRef.current.click()} disabled={uploading} style={{padding:"10px 0",borderRadius:8,background:accent,border:"none",color:"#000",fontSize:13,fontWeight:700,cursor:"pointer",opacity:uploading?0.7:1}}>
-            {uploading?"保存中...":"📷 カメラで撮影"}
+          <button onClick={startTimedCamera} disabled={uploading||cameraOpen} style={{padding:"10px 0",borderRadius:8,background:accent,border:"none",color:"#000",fontSize:13,fontWeight:700,cursor:"pointer",opacity:(uploading||cameraOpen)?0.7:1}}>
+            {cameraOpen?`⏱ ${countdown}秒`:"📷 10秒タイマー撮影"}
           </button>
-          <button onClick={()=>libraryInputRef.current&&libraryInputRef.current.click()} disabled={uploading} style={{padding:"10px 0",borderRadius:8,background:"#252830",border:"1px solid #334155",color:"#E2E8F0",fontSize:13,fontWeight:700,cursor:"pointer",opacity:uploading?0.7:1}}>
+          <button onClick={()=>libraryInputRef.current&&libraryInputRef.current.click()} disabled={uploading||cameraOpen} style={{padding:"10px 0",borderRadius:8,background:"#252830",border:"1px solid #334155",color:"#E2E8F0",fontSize:13,fontWeight:700,cursor:"pointer",opacity:(uploading||cameraOpen)?0.7:1}}>
             {uploading?"保存中...":"🖼️ ライブラリから追加"}
           </button>
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          multiple
-          onChange={e=>addFiles(e.target.files)}
-          style={{display:"none"}}
-        />
         <input
           ref={libraryInputRef}
           type="file"
@@ -772,10 +972,33 @@ function PhotoPanel({selDate,dayData,updateDay,accent}){
           onChange={e=>addFiles(e.target.files)}
           style={{display:"none"}}
         />
+        <canvas ref={canvasRef} style={{display:"none"}} />
         <div style={{fontSize:10,color:"#64748B",lineHeight:1.6}}>
-          選択中の分類: <span style={{color:accent,fontWeight:700}}>{PHOTO_TYPES.find(t=>t.id===activeType)?.label}</span> / カメラ撮影と写真ライブラリ選択を別ボタンで使い分けできます
+          選択中の分類: <span style={{color:accent,fontWeight:700}}>{PHOTO_TYPES.find(t=>t.id===activeType)?.label}</span> / タイマーボタンを押すとカメラが起動し、10秒後に自動撮影します
         </div>
       </div>
+
+      {cameraOpen&&(
+        <div style={{position:"fixed",inset:0,zIndex:3000,background:"rgba(0,0,0,0.86)",display:"flex",alignItems:"center",justifyContent:"center",padding:16}}>
+          <div style={{width:"100%",maxWidth:420,background:"#111318",border:"1px solid #252830",borderRadius:14,padding:14}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+              <div style={{fontSize:12,fontWeight:700,color:"#E2E8F0"}}>📷 10秒タイマー撮影</div>
+              <button onClick={closeCameraModal} style={{padding:"6px 10px",borderRadius:7,background:"#252830",border:"1px solid #374151",color:"#CBD5E1",fontSize:11,cursor:"pointer"}}>閉じる</button>
+            </div>
+            <div style={{position:"relative",aspectRatio:"3 / 4",background:"#000",borderRadius:12,overflow:"hidden",border:"1px solid #252830"}}>
+              <video ref={videoRef} playsInline muted autoPlay style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}} />
+              <div style={{position:"absolute",top:10,left:10,background:"rgba(0,0,0,0.55)",padding:"6px 10px",borderRadius:999,color:"#fff",fontSize:12,fontWeight:700,border:"1px solid rgba(255,255,255,0.15)"}}>
+                自動撮影まで {countdown}秒
+              </div>
+            </div>
+            {cameraError?<div style={{fontSize:11,color:"#FCA5A5",marginTop:10,lineHeight:1.6}}>{cameraError}</div>:<div style={{fontSize:11,color:"#94A3B8",marginTop:10,lineHeight:1.6}}>ボタンを押してから10秒後に自動で保存します。姿勢を整えてお待ちください。</div>}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:10}}>
+              <button onClick={()=>{closeCameraModal();setTimeout(startTimedCamera,150);}} style={{padding:"10px 0",borderRadius:8,background:"rgba(96,165,250,0.1)",border:"1px solid rgba(96,165,250,0.35)",color:"#60A5FA",fontSize:12,fontWeight:700,cursor:"pointer"}}>やり直す</button>
+              <button onClick={captureFrame} style={{padding:"10px 0",borderRadius:8,background:"rgba(52,211,153,0.15)",border:"1px solid rgba(52,211,153,0.35)",color:"#6EE7B7",fontSize:12,fontWeight:700,cursor:"pointer"}}>今すぐ撮影</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div style={{background:"#161920",borderRadius:12,padding:14,border:"1px solid #252830"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
@@ -845,10 +1068,10 @@ function App(){
   const selObj=new Date(selDate+"T00:00:00");
   const CELL=34;
 
-  if(!ready)return(<div style={{background:"#0D0F14",height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748B"}}>読み込み中...</div>);
+  if(!ready)return(<div style={{background:"#0D0F14",height:"100dvh",display:"flex",alignItems:"center",justifyContent:"center",color:"#64748B"}}>読み込み中...</div>);
 
   return(
-    <div style={{background:"#0D0F14",height:"100vh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"'Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif",color:"#E2E8F0"}}>
+    <div style={{background:"#0D0F14",height:"100dvh",display:"flex",flexDirection:"column",overflow:"hidden",fontFamily:"'Hiragino Sans','Noto Sans JP','Yu Gothic',sans-serif",color:"#E2E8F0"}}>
 
       {/* Header */}
       <div style={{flexShrink:0,background:"#111318",borderBottom:`2px solid ${tab==="progress"?"#A78BFA":accent}44`}}>

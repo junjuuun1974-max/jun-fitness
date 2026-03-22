@@ -395,17 +395,18 @@ function WellnessIllustration({small=false}){
 }
 
 function DailyHeroCard({dayType,nutrition}){
-  const map={workout:{title:"自然体で、しっかり鍛える日",sub:"たんぱく質と回復を意識して、軽やかに積み上げましょう。",icon:"🌿"},rest:{title:"整える日",sub:"体を休めながら、食事と睡眠でコンディションを整えます。",icon:"☀️"},recovery:{title:"回復を深める日",sub:"ストレッチと水分補給で、芯からリフレッシュ。",icon:"🍃"}};
+  const map={workout:{title:"自然体で、しっかり鍛える日",sub:"たんぱく質と回復を意識して、軽やかに積み上げましょう。",icon:"🌿",mark:"🏃"},rest:{title:"整える日",sub:"体を休めながら、食事と睡眠でコンディションを整えます。",icon:"☀️",mark:"🌿"},recovery:{title:"回復を深める日",sub:"ストレッチと水分補給で、芯からリフレッシュ。",icon:"🍃",mark:"🧘"}};
   const info=map[dayType]||map.rest;
   return(
-    <div className="soft-card" style={{borderRadius:24,padding:18,marginBottom:14,background:'linear-gradient(135deg,rgba(255,255,255,.92) 0%, rgba(247,244,234,.96) 100%)',overflow:'hidden',position:'relative'}}>
-      <div style={{position:'absolute',right:-10,top:-6,opacity:.95}}><WellnessIllustration small={true}/></div>
-      <div style={{position:'relative',zIndex:1,maxWidth:'72%'}}>
+    <div className="soft-card" style={{borderRadius:24,padding:18,marginBottom:14,background:'linear-gradient(135deg,#FFFDF8 0%, #F7F4EA 72%, #EEF5DE 100%)',overflow:'hidden',position:'relative',border:'1px solid #E8EAD9'}}>
+      <div style={{position:'absolute',inset:0,background:'radial-gradient(circle at 85% 18%, rgba(177,214,111,.24) 0, rgba(177,214,111,.24) 54px, transparent 55px), radial-gradient(circle at 100% 88%, rgba(111,176,74,.14) 0, rgba(111,176,74,.14) 92px, transparent 93px), linear-gradient(135deg, transparent 0%, transparent 56%, rgba(174,211,113,.08) 100%)'}}/>
+      <div style={{position:'absolute',right:18,top:18,fontSize:52,opacity:.12,lineHeight:1}}>{info.mark}</div>
+      <div style={{position:'relative',zIndex:1}}>
         <div style={{display:'inline-flex',alignItems:'center',gap:6,padding:'5px 10px',borderRadius:999,background:'#ECF3DE',color:'#5F8F3D',fontSize:11,fontWeight:800,marginBottom:10}}>{info.icon} WELLNESS NOTE</div>
-        <div style={{fontSize:19,fontWeight:900,color:'#344226',lineHeight:1.35,marginBottom:6}}>{info.title}</div>
-        <div style={{fontSize:12,color:'#6F7B5E',lineHeight:1.7,marginBottom:10}}>{info.sub}</div>
-        <div style={{display:'flex',gap:10,flexWrap:'wrap'}}>
-          {[{label:'P',val:Math.round(nutrition.p||0),color:'#D8892E'},{label:'C',val:Math.round(nutrition.c||0),color:'#6FAACF'},{label:'F',val:Math.round(nutrition.f||0),color:'#6FB04A'},{label:'kcal',val:Math.round(nutrition.kcal||0),color:'#8C8A4F'}].map(item=><div key={item.label} style={{minWidth:58,padding:'8px 10px',borderRadius:16,background:'#fff',border:'1px solid #E7EAD7'}}><div style={{fontSize:10,color:'#7F8D6D'}}>{item.label}</div><div style={{fontSize:16,fontWeight:900,color:item.color}}>{item.val}</div></div>)}
+        <div style={{fontSize:19,fontWeight:900,color:'#344226',lineHeight:1.35,marginBottom:6,paddingRight:34}}>{info.title}</div>
+        <div style={{fontSize:12,color:'#6F7B5E',lineHeight:1.7,marginBottom:12,maxWidth:420}}>{info.sub}</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(82px,1fr))',gap:10}}>
+          {[{label:'P',val:Math.round(nutrition.p||0),color:'#D8892E'},{label:'C',val:Math.round(nutrition.c||0),color:'#6FAACF'},{label:'F',val:Math.round(nutrition.f||0),color:'#6FB04A'},{label:'kcal',val:Math.round(nutrition.kcal||0),color:'#8C8A4F'}].map(item=><div key={item.label} style={{minWidth:0,padding:'10px 12px',borderRadius:16,background:'rgba(255,255,255,.88)',border:'1px solid #E7EAD7',boxSizing:'border-box'}}><div style={{fontSize:10,color:'#7F8D6D'}}>{item.label}</div><div style={{fontSize:16,fontWeight:900,color:item.color,whiteSpace:'nowrap'}}>{item.val}</div></div>)}
         </div>
       </div>
     </div>
@@ -414,23 +415,29 @@ function DailyHeroCard({dayType,nutrition}){
 
 function ProgressHeroCard({cur,daysLeft,photoCount}){
   return(
-    <div className="leaf-bg" style={{borderRadius:28,padding:20,marginBottom:16,color:'#F9FAF2',position:'relative',overflow:'hidden',boxShadow:'0 14px 34px rgba(105,145,54,.22)'}}>
-      <div style={{position:'absolute',right:-8,bottom:-2,opacity:.92}}><WellnessIllustration/></div>
-      <div style={{position:'relative',zIndex:1,maxWidth:'62%'}}>
+    <div className="leaf-bg" style={{borderRadius:28,padding:20,marginBottom:16,color:'#F9FAF2',position:'relative',overflow:'hidden',boxShadow:'0 14px 34px rgba(105,145,54,.22)',backgroundImage:'linear-gradient(135deg, rgba(164,206,76,.96) 0%, rgba(142,191,63,.96) 48%, rgba(120,175,54,.96) 100%), radial-gradient(circle at 88% 22%, rgba(255,255,255,.12) 0, rgba(255,255,255,.12) 72px, transparent 73px), radial-gradient(circle at 92% 84%, rgba(255,255,255,.09) 0, rgba(255,255,255,.09) 100px, transparent 101px)'}}>
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(140deg, transparent 0%, transparent 58%, rgba(255,255,255,.08) 100%)'}}/>
+      <div style={{position:'absolute',right:18,bottom:14,fontSize:76,opacity:.11,lineHeight:1}}>🏃</div>
+      <div style={{position:'relative',zIndex:1}}>
         <div className="hero-chip">🌱 HEALTHY PROGRESS</div>
-        <div style={{fontSize:25,fontWeight:900,lineHeight:1.28,margin:'12px 0 8px'}}>自然体で続ける、
+        <div style={{fontSize:25,fontWeight:900,lineHeight:1.28,margin:'12px 0 8px',maxWidth:320}}>自然体で続ける、
           <br/>ヘルシーフィットネス。
         </div>
-        <div style={{fontSize:12,lineHeight:1.8,opacity:.96,marginBottom:14}}>体組成・写真・栄養ログをひとつにまとめて、変化をやさしく見える化します。</div>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,maxWidth:320}}>
-          <div style={{padding:'10px 12px',borderRadius:18,background:'rgba(255,255,255,.16)',backdropFilter:'blur(6px)'}}><div style={{fontSize:10,opacity:.84}}>体重</div><div style={{fontSize:20,fontWeight:900}}>{cur.weight||'-'}<span style={{fontSize:12}}>kg</span></div></div>
-          <div style={{padding:'10px 12px',borderRadius:18,background:'rgba(255,255,255,.16)',backdropFilter:'blur(6px)'}}><div style={{fontSize:10,opacity:.84}}>体脂肪</div><div style={{fontSize:20,fontWeight:900}}>{cur.fatPct||'-'}<span style={{fontSize:12}}>%</span></div></div>
-          <div style={{padding:'10px 12px',borderRadius:18,background:'rgba(255,255,255,.16)',backdropFilter:'blur(6px)'}}><div style={{fontSize:10,opacity:.84}}>写真</div><div style={{fontSize:20,fontWeight:900}}>{photoCount}<span style={{fontSize:12}}>枚</span></div></div>
+        <div style={{fontSize:12,lineHeight:1.8,opacity:.96,marginBottom:14,maxWidth:320}}>体組成・写真・栄養ログをひとつにまとめて、変化をやさしく見える化します。</div>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(3,minmax(0,1fr))',gap:8,width:'100%'}}>
+          <div style={{padding:'10px 10px',borderRadius:18,background:'rgba(255,255,255,.16)',backdropFilter:'blur(6px)',minWidth:0}}><div style={{fontSize:10,opacity:.84}}>体重</div><div style={{fontSize:clampNum(cur.weight),fontWeight:900,whiteSpace:'nowrap',lineHeight:1.1}}>{cur.weight||'-'}<span style={{fontSize:12}}>kg</span></div></div>
+          <div style={{padding:'10px 10px',borderRadius:18,background:'rgba(255,255,255,.16)',backdropFilter:'blur(6px)',minWidth:0}}><div style={{fontSize:10,opacity:.84}}>体脂肪</div><div style={{fontSize:clampNum(cur.fatPct),fontWeight:900,whiteSpace:'nowrap',lineHeight:1.1}}>{cur.fatPct||'-'}<span style={{fontSize:12}}>%</span></div></div>
+          <div style={{padding:'10px 10px',borderRadius:18,background:'rgba(255,255,255,.16)',backdropFilter:'blur(6px)',minWidth:0}}><div style={{fontSize:10,opacity:.84}}>写真</div><div style={{fontSize:clampNum(photoCount),fontWeight:900,whiteSpace:'nowrap',lineHeight:1.1}}>{photoCount}<span style={{fontSize:12}}>枚</span></div></div>
         </div>
       </div>
-      {daysLeft!==null&&daysLeft>0&&<div style={{position:'absolute',right:20,top:18,padding:'6px 10px',borderRadius:999,background:'rgba(255,255,255,.18)',fontSize:11,fontWeight:700}}>目標まで あと {daysLeft}日</div>}
+      {daysLeft!==null&&daysLeft>0&&<div style={{position:'absolute',right:14,top:14,padding:'6px 10px',borderRadius:999,background:'rgba(255,255,255,.18)',fontSize:11,fontWeight:700,maxWidth:'46%',textAlign:'center'}}>目標まで あと {daysLeft}日</div>}
     </div>
   );
+}
+
+function clampNum(v){
+  const s=String(v??'');
+  return s.length>=5?18:20;
 }
 
 // ── Progress Page ─────────────────────────────────────────

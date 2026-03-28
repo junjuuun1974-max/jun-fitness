@@ -1415,17 +1415,17 @@ function App(){
         </div>
       ):(
         <div style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden"}}>
-          <div style={{background:"rgba(255,255,255,.58)",padding:"10px 14px",display:"flex",alignItems:"center",gap:6,flexShrink:0,borderBottom:"1px solid #E5EAD8",backdropFilter:"blur(6px)"}}>
-            <div>
+          <div style={{background:"rgba(255,255,255,.58)",padding:"10px 14px 12px",display:"flex",flexDirection:"column",gap:10,flexShrink:0,borderBottom:"1px solid #E5EAD8",backdropFilter:"blur(6px)"}}>
+            <div style={{display:"flex",alignItems:"baseline",gap:6,flexWrap:"wrap"}}>
               <span style={{fontSize:13,fontWeight:800}}>{selObj.getMonth()+1}月{selObj.getDate()}日</span>
-              <span style={{fontSize:10,color:"#7F8D6D",marginLeft:5}}>({DAY_JP[selObj.getDay()]}){selDate===today?" · 今日":""}</span>
+              <span style={{fontSize:10,color:"#7F8D6D"}}>({DAY_JP[selObj.getDay()]}){selDate===today?" · 今日":""}</span>
             </div>
-            <div style={{display:"flex",gap:8,marginLeft:"auto",flexWrap:"wrap",justifyContent:"flex-end"}}>
-              {Object.entries(DAY_TYPES).map(([k,v])=>(<button key={k} onClick={()=>updateSel({type:k})} style={{minHeight:40,padding:"8px 14px",borderRadius:10,fontSize:16,cursor:"pointer",touchAction:"manipulation",WebkitTapHighlightColor:"transparent",border:`1.5px solid ${dayType===k?v.color:"#DDE8C6"}`,background:dayType===k?"#F8FBF0":"rgba(255,255,255,.92)",color:dayType===k?"#5F8F3D":"#6F7B5E",fontWeight:dayType===k?800:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:dayType===k?"0 4px 10px rgba(111,176,74,.12)":"none"}}>{v.icon} <span>{v.label}</span></button>))}
+            <div style={{display:"grid",gridTemplateColumns:"repeat(3,minmax(0,1fr))",gap:10,width:"100%"}}>
+              {Object.entries(DAY_TYPES).map(([k,v])=>(<button key={k} onClick={()=>updateSel({type:k})} style={{minHeight:56,padding:"0 10px",width:"100%",borderRadius:14,fontSize:14,cursor:"pointer",touchAction:"manipulation",WebkitTapHighlightColor:"transparent",border:`1.5px solid ${dayType===k?v.color:"#DDE8C6"}`,background:dayType===k?"#F8FBF0":"rgba(255,255,255,.92)",color:dayType===k?"#5F8F3D":"#6F7B5E",fontWeight:dayType===k?800:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:dayType===k?"0 4px 10px rgba(111,176,74,.12)":"none",whiteSpace:"nowrap",overflow:"hidden"}}><span style={{fontSize:18,flexShrink:0}}>{v.icon}</span><span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{v.label}</span></button>))}
             </div>
           </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",background:"rgba(255,255,255,.7)",borderBottom:"1px solid #E5EAD8",flexShrink:0,backdropFilter:"blur(6px)"}}>
-            {[{id:"meal",label:"食事",icon:"🍽"},{id:"training",label:"トレーニング",icon:"🏋️"},{id:"body",label:"体組成",icon:"📊"},{id:"photo",label:"写真",icon:"📸"}].map(t=>(<button key={t.id} onClick={()=>setPanel(t.id)} style={{minHeight:52,padding:"12px 4px",background:"none",border:"none",cursor:"pointer",touchAction:"manipulation",WebkitTapHighlightColor:"transparent",borderBottom:panel===t.id?`3px solid ${accent}`:"3px solid transparent",color:panel===t.id?"#5F8F3D":"#6F7B5E",fontWeight:panel===t.id?800:600,fontSize:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6,lineHeight:1.1}}><span style={{fontSize:18}}>{t.icon}</span><span>{t.label}</span></button>))}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,minmax(0,1fr))",background:"rgba(255,255,255,.7)",borderBottom:"1px solid #E5EAD8",flexShrink:0,backdropFilter:"blur(6px)"}}>
+            {[{id:"meal",label:"食事",icon:"🍽"},{id:"training",label:"トレーニング",icon:"🏋️"},{id:"body",label:"体組成",icon:"📊"},{id:"photo",label:"写真",icon:"📸"}].map(t=>(<button key={t.id} onClick={()=>setPanel(t.id)} style={{minHeight:60,padding:"10px 2px",background:"none",border:"none",cursor:"pointer",touchAction:"manipulation",WebkitTapHighlightColor:"transparent",borderBottom:panel===t.id?`3px solid ${accent}`:"3px solid transparent",color:panel===t.id?"#5F8F3D":"#6F7B5E",fontWeight:panel===t.id?800:600,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",gap:4,lineHeight:1,whiteSpace:"nowrap",overflow:"hidden"}}><span style={{fontSize:17,flexShrink:0}}>{t.icon}</span><span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.label}</span></button>))}
           </div>
           <div style={{flex:1,overflowY:"auto",padding:"14px 14px calc(18px + env(safe-area-inset-bottom))",WebkitOverflowScrolling:"touch"}}><DailyHeroCard dayType={dayType} nutrition={selNutrition}/>
             {panel==="meal"     &&<MealPanel     dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent}/>}

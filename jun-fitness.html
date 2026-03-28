@@ -1541,5 +1541,23 @@ function App(){
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
+ <!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA4CsdZv_oiqZg8h2Pyu9I0BFQCVuBkRSg",
+    authDomain: "jun-fitness.firebaseapp.com",
+    projectId: "jun-fitness",
+    storageBucket: "jun-fitness.firebasestorage.app",
+    messagingSenderId: "1011345401803",
+    appId: "1:1011345401803:web:774faeda5dfc2ee8e6f84e",
+    measurementId: "G-VJ84935N31"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>
 </body>
 </html>

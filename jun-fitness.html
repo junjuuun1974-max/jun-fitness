@@ -1,13 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
-<meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
-<meta name="apple-mobile-web-app-title" content="JUN FITNESS"/>
-<title>JUN FITNESS</title>
-<style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JUN FITNESS</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: linear-gradient(180deg, #F4F6F8, #E9EEF2);
+    }
+
+    button {
+      padding: 15px 25px;
+      font-size: 18px;
+      border-radius: 10px;
+      background: #4285F4;
+      color: white;
+      border: none;
+    }
+  </style>
+</head>
+
+<body>
+
+<button onclick="login()">Googleログイン</button>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA4CsdZv_oiqZg8h2Pyu9I0BFQCVuBkRSg",
+    authDomain: "jun-fitness.firebaseapp.com",
+    projectId: "jun-fitness",
+    storageBucket: "jun-fitness.firebasestorage.app",
+    messagingSenderId: "1011345401803",
+    appId: "1:1011345401803:web:774faeda5dfc2ee8e6f84e"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
+
+  window.login = async function() {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      alert("ログイン成功：" + result.user.email);
+    } catch (e) {
+      alert("ログイン失敗：" + e.message);
+    }
+  };
+</script>
+
+</body>
+</html>
+
+
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
   html,body,#root{height:100%;margin:0;padding:0;background:#F6F4EA;}
   body{background:linear-gradient(180deg,#F2F3E8 0%,#F7F4EA 28%,#FAF7EF 100%);}
@@ -1541,23 +1595,32 @@ function App(){
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 </script>
- <!-- Firebase -->
+ <!-- Firebase + Login -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA4CsdZv_oiqZg8h2Pyu9I0BFQCVuBkRSg",
-    authDomain: "jun-fitness.firebaseapp.com",
-    projectId: "jun-fitness",
-    storageBucket: "jun-fitness.firebasestorage.app",
-    messagingSenderId: "1011345401803",
-    appId: "1:1011345401803:web:774faeda5dfc2ee8e6f84e",
-    measurementId: "G-VJ84935N31"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyA4CsdZv_oiqZg8h2Pyu9I0BFQCVuBkRSg",
+  authDomain: "jun-fitness.firebaseapp.com",
+  projectId: "jun-fitness",
+  storageBucket: "jun-fitness.firebasestorage.app",
+  messagingSenderId: "1011345401803",
+  appId: "1:1011345401803:web:774faeda5dfc2ee8e6f84e",
+};
 
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
+window.login = async function () {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    alert("ログイン成功：" + result.user.displayName);
+  } catch (e) {
+    alert("ログイン失敗：" + e.message);
+  }
+};
 </script>
 </body>
 </html>

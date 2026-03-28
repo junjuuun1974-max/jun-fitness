@@ -1378,123 +1378,41 @@ function App(){
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px 8px",borderBottom:"1px solid rgba(255,255,255,.18)"}}>
           <div style={{fontSize:15,fontWeight:900,color:"#FFF9ED",letterSpacing:.4,textShadow:"0 1px 1px rgba(0,0,0,.08)"}}>🌿 JUN FITNESS</div>
           <div style={{display:"flex",gap:0,background:"rgba(255,255,255,.18)",borderRadius:999,padding:3,backdropFilter:"blur(8px)"}}>
-            <button onClick={()=>{setTab("cal");setShowCalendar(false);}} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="cal"?700:400,background:tab==="cal"?"rgba(255,255,255,.9)":"transparent",color:tab==="cal"?"#5F8F3D":"rgba(255,255,255,.8)"}}>📅 カレンダー</button>
-            <button onClick={()=>{setTab("progress");setShowCalendar(false);}} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="progress"?700:400,background:tab==="progress"?"rgba(255,255,255,.9)":"transparent",color:tab==="progress"?"#5F8F3D":"rgba(255,255,255,.8)"}}>📊 進捗</button>
+            <button onClick={()=>setTab("cal")} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="cal"?700:400,background:tab==="cal"?"rgba(255,255,255,.9)":"transparent",color:tab==="cal"?"#5F8F3D":"rgba(255,255,255,.8)"}}>📅 カレンダー</button>
+            <button onClick={()=>setTab("progress")} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="progress"?700:400,background:tab==="progress"?"rgba(255,255,255,.9)":"transparent",color:tab==="progress"?"#5F8F3D":"rgba(255,255,255,.8)"}}>📊 進捗</button>
           </div>
         </div>
         {tab==="cal"&&(
-          <div style={{padding:"8px 14px 12px"}}>
+          <div style={{padding:"10px 14px 12px"}}>
             <button
               onClick={()=>setShowCalendar(true)}
               style={{
                 width:"100%",
+                minHeight:52,
+                border:"1px solid rgba(255,255,255,.28)",
+                borderRadius:18,
+                background:"rgba(255,255,255,.18)",
+                color:"#FFF9ED",
+                fontSize:15,
+                fontWeight:800,
                 display:"flex",
                 alignItems:"center",
                 justifyContent:"space-between",
                 gap:10,
-                padding:"10px 12px",
-                borderRadius:16,
-                border:"1px solid rgba(255,255,255,.28)",
-                background:"rgba(255,255,255,.14)",
-                color:"#FFF9ED",
-                cursor:"pointer",
-                boxShadow:"inset 0 1px 0 rgba(255,255,255,.12)"
+                padding:"0 14px",
+                backdropFilter:"blur(8px)",
+                boxShadow:"0 8px 18px rgba(72,104,27,.10)"
               }}
             >
-              <div style={{display:"flex",alignItems:"center",gap:10,minWidth:0}}>
-                <span style={{fontSize:18,flexShrink:0}}>📅</span>
-                <div style={{display:"flex",flexDirection:"column",alignItems:"flex-start",minWidth:0}}>
-                  <span style={{fontSize:13,fontWeight:800,letterSpacing:.2,whiteSpace:"nowrap"}}>{yr}年 {MONTH_JP[mo]}</span>
-                  <span style={{fontSize:11,color:"rgba(255,249,237,.88)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{selObj.getMonth()+1}月{selObj.getDate()}日 ({DAY_JP[selObj.getDay()]}) を表示中</span>
-                </div>
-              </div>
-              <span style={{fontSize:12,fontWeight:700,whiteSpace:"nowrap",padding:"6px 10px",borderRadius:999,background:"rgba(255,255,255,.2)"}}>開く</span>
+              <span style={{display:"flex",alignItems:"center",gap:8}}>
+                <span style={{fontSize:18}}>📅</span>
+                <span>カレンダーを開く</span>
+              </span>
+              <span style={{fontSize:13,opacity:.95}}>{yr}年 {MONTH_JP[mo]}</span>
             </button>
           </div>
         )}
       </div>
-      {tab==="cal"&&showCalendar&&(
-        <div
-          onClick={()=>setShowCalendar(false)}
-          style={{
-            position:"fixed",
-            inset:0,
-            zIndex:3000,
-            background:"rgba(34,46,18,.28)",
-            backdropFilter:"blur(6px)",
-            display:"flex",
-            alignItems:"flex-start",
-            justifyContent:"center",
-            padding:"max(70px, calc(env(safe-area-inset-top) + 58px)) 16px 24px"
-          }}
-        >
-          <div
-            onClick={e=>e.stopPropagation()}
-            style={{
-              width:"min(420px, 100%)",
-              background:"linear-gradient(180deg,#9CC64A 0%,#86B74A 100%)",
-              borderRadius:24,
-              boxShadow:"0 22px 50px rgba(72,104,27,.28)",
-              border:"1px solid rgba(255,255,255,.26)",
-              overflow:"hidden"
-            }}
-          >
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 16px 8px",color:"#FFF9ED"}}>
-              <button onClick={()=>setMonth(new Date(yr,mo-1,1))} style={{background:"none",border:"none",color:"#FFF9ED",cursor:"pointer",fontSize:24,fontWeight:700,padding:"4px 8px"}}>‹</button>
-              <div style={{fontWeight:800,fontSize:22,letterSpacing:.3}}>{yr}年 {MONTH_JP[mo]}</div>
-              <button onClick={()=>setMonth(new Date(yr,mo+1,1))} style={{background:"none",border:"none",color:"#FFF9ED",cursor:"pointer",fontSize:24,fontWeight:700,padding:"4px 8px"}}>›</button>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns":"repeat(7,1fr)",padding:"0 14px"}}>
-              {DAY_JP.map((d)=>(<div key={d} style={{textAlign:"center",fontSize:12,fontWeight:700,paddingBottom:6,color:"rgba(255,249,237,.94)"}}>{d}</div>))}
-            </div>
-            <div style={{display:"grid",gridTemplateColumns":"repeat(7,1fr)",gap:4,padding:"0 14px 12px"}}>
-              {Array.from({length:fd}).map((_,i)=><div key={`modal-e${i}`} style={{aspectRatio:"1 / 1"}}/>)}
-              {Array.from({length:dim}).map((_,i)=>{
-                const day=i+1;
-                const dk=`${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-                const dt=(data[dk]||{}).type;
-                const col=dt?DAY_TYPES[dt].color:null;
-                const isT=dk===today;
-                const isS=dk===selDate;
-                const hasBody=!!(data[dk]?.body?.weight);
-                const hasPhoto=!!((data[dk]?.photos||[]).length);
-                return(
-                  <button
-                    key={day}
-                    onClick={()=>{setSelDate(dk);setShowCalendar(false);}}
-                    style={{
-                      aspectRatio:"1 / 1",
-                      borderRadius:16,
-                      border:isT?"2px solid #FFF9ED":isS?"2px solid rgba(255,255,255,.86)":"1px solid transparent",
-                      background:isS?"rgba(255,255,255,.18)":"transparent",
-                      color:"#FFF9ED",
-                      cursor:"pointer",
-                      display:"flex",
-                      flexDirection:"column",
-                      alignItems:"center",
-                      justifyContent:"center",
-                      gap:4,
-                      boxShadow:isS?"0 10px 18px rgba(72,104,27,.18)":"none"
-                    }}
-                  >
-                    <div style={{fontSize:15,fontWeight:isT?900:700,lineHeight:1}}>{day}</div>
-                    <div style={{display:"flex",gap:4,minHeight:6}}>
-                      {dt&&<div style={{width:6,height:6,borderRadius:"50%",background:col}}/>}
-                      {hasBody&&<div style={{width:6,height:6,borderRadius:"50%",background:"#A6A66F"}}/>}
-                      {hasPhoto&&<div style={{width:6,height:6,borderRadius:"50%",background:"#FFF1B8"}}/>}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <div style={{padding:"0 16px 16px",display:"flex",justifyContent:"space-between",gap:10}}>
-              <button onClick={()=>{setSelDate(today);setMonth(new Date());setShowCalendar(false);}} style={{flex:1,minHeight:44,borderRadius:14,border:"1px solid rgba(255,255,255,.28)",background:"rgba(255,255,255,.16)",color:"#FFF9ED",fontWeight:700,cursor:"pointer"}}>今日へ移動</button>
-              <button onClick={()=>setShowCalendar(false)} style={{flex:1,minHeight:44,borderRadius:14,border:"none",background:"#FFF9ED",color:"#6A8D38",fontWeight:800,cursor:"pointer"}}>閉じる</button>
-            </div>
-          </div>
-        </div>
-      )}
-
 
       {/* Content */}
       {tab==="progress"?(
@@ -1520,6 +1438,100 @@ function App(){
             {panel==="training" &&<TrainingPanel dayType={dayType} dayData={selData} updateDay={updateSel} accent={accent} goals={goals}/>}
             {panel==="body"     &&<BodyPanel     selDate={selDate} allData={data}    updateDay={updateSel} accent={accent}/>}
             {panel==="photo"    &&<PhotoPanel    selDate={selDate} dayData={selData}  updateDay={updateSel} accent={accent}/>}
+          </div>
+        </div>
+      )}
+
+      {tab==="cal" && showCalendar && (
+        <div
+          onClick={()=>setShowCalendar(false)}
+          style={{
+            position:"fixed",
+            inset:0,
+            background:"rgba(38,49,24,.22)",
+            backdropFilter:"blur(4px)",
+            zIndex:3000,
+            display:"flex",
+            alignItems:"center",
+            justifyContent:"center",
+            padding:"20px 14px calc(24px + env(safe-area-inset-bottom))"
+          }}
+        >
+          <div
+            onClick={(e)=>e.stopPropagation()}
+            className="soft-card"
+            style={{
+              width:"100%",
+              maxWidth:380,
+              borderRadius:24,
+              padding:"16px 14px 14px",
+              background:"linear-gradient(180deg,#FFFDF7 0%,#F8F5EA 100%)",
+              border:"1px solid #E2E8CF",
+              boxShadow:"0 18px 44px rgba(71,94,34,.18)"
+            }}
+          >
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+              <button onClick={()=>setMonth(new Date(yr,mo-1,1))} style={{background:"none",border:"none",fontSize:24,fontWeight:700,color:"#5F8F3D",padding:"4px 8px"}}>‹</button>
+              <div style={{fontSize:18,fontWeight:900,color:"#344226"}}>{yr}年 {MONTH_JP[mo]}</div>
+              <button onClick={()=>setMonth(new Date(yr,mo+1,1))} style={{background:"none",border:"none",fontSize:24,fontWeight:700,color:"#5F8F3D",padding:"4px 8px"}}>›</button>
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6,marginBottom:8}}>
+              {DAY_JP.map((d)=>(
+                <div key={d} style={{textAlign:"center",fontSize:11,fontWeight:800,color:"#6F7B5E",paddingBottom:2}}>{d}</div>
+              ))}
+            </div>
+
+            <div style={{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:6}}>
+              {Array.from({length:fd}).map((_,i)=><div key={`e${i}`} style={{height:40}} />)}
+              {Array.from({length:dim}).map((_,i)=>{
+                const day=i+1;
+                const dk=`${yr}-${String(mo+1).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+                const dt=(data[dk]||{}).type;
+                const col=dt?DAY_TYPES[dt].color:null;
+                const isT=dk===today,isS=dk===selDate;
+                const hasBody=!!(data[dk]?.body?.weight);
+                const hasPhoto=!!((data[dk]?.photos||[]).length);
+
+                return(
+                  <button
+                    key={day}
+                    onClick={()=>{
+                      setSelDate(dk);
+                      setShowCalendar(false);
+                    }}
+                    style={{
+                      height:40,
+                      borderRadius:12,
+                      border:isT?"2px solid #8AB548":isS?"2px solid #B7C99C":"1px solid #E6EBD7",
+                      background:isS?"#F2F7E6":"rgba(255,255,255,.9)",
+                      color:"#344226",
+                      display:"flex",
+                      flexDirection:"column",
+                      alignItems:"center",
+                      justifyContent:"center",
+                      gap:3,
+                      fontSize:14,
+                      fontWeight:isT||isS?900:600,
+                      boxShadow:isS?"0 8px 18px rgba(111,176,74,.14)":"none",
+                      padding:0
+                    }}
+                  >
+                    <span style={{lineHeight:1}}>{day}</span>
+                    <span style={{display:"flex",gap:3,height:5}}>
+                      {dt&&<span style={{width:5,height:5,borderRadius:"50%",background:col,display:"inline-block"}} />}
+                      {hasBody&&<span style={{width:5,height:5,borderRadius:"50%",background:"#A6A66F",display:"inline-block"}} />}
+                      {hasPhoto&&<span style={{width:5,height:5,borderRadius:"50%",background:"#F4C95D",display:"inline-block"}} />}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:14,gap:10}}>
+              <div style={{fontSize:12,color:"#7F8D6D"}}>{selObj.getMonth()+1}月{selObj.getDate()}日を選択中</div>
+              <button onClick={()=>setShowCalendar(false)} style={{padding:"10px 14px",borderRadius:12,border:"1px solid #D8E4BE",background:"#F8FBF0",color:"#5F8F3D",fontWeight:800}}>閉じる</button>
+            </div>
           </div>
         </div>
       )}

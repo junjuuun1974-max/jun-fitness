@@ -26,15 +26,15 @@
   ::-webkit-scrollbar{display:none;}
   textarea{font-family:inherit;}
 
-  #firebase-login-wrap{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 62px);z-index:9999;display:flex;gap:6px;align-items:center;justify-content:flex-start;max-width:calc(100vw - 24px);flex-wrap:nowrap;}
-  #firebase-login-wrap .auth-name-chip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:#35511E;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.10);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.2;}
-  #firebase-login-wrap .auth-action-chip{padding:6px 10px;border:none;border-radius:999px;background:#6E8E45;color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.10);font-size:12px;line-height:1.2;}
-  #firebase-login-wrap .auth-login-chip{padding:6px 10px;border:none;border-radius:999px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.14);font-size:12px;line-height:1.2;max-width:100%;}
+  #firebase-login-wrap{position:fixed;right:14px;top:calc(env(safe-area-inset-top) + 14px);z-index:9999;display:flex;gap:6px;align-items:center;justify-content:flex-end;max-width:calc(100vw - 150px);flex-wrap:nowrap;}
+  #firebase-login-wrap .auth-name-chip{padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.94);color:#35511E;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.08);max-width:126px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px;line-height:1.15;border:1px solid rgba(148,190,69,.18);}
+  #firebase-login-wrap .auth-action-chip{padding:5px 10px;border:none;border-radius:999px;background:#6E8E45;color:#fff;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.08);font-size:11px;line-height:1.15;}
+  #firebase-login-wrap .auth-login-chip{padding:5px 10px;border:none;border-radius:999px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 4px 10px rgba(0,0,0,.12);font-size:11px;line-height:1.15;max-width:100%;}
 
   @media (max-width: 480px){
-    #firebase-login-wrap{left:10px!important;top:calc(env(safe-area-inset-top) + 60px)!important;max-width:calc(100vw - 20px)!important;gap:5px!important;}
-    #firebase-login-wrap .auth-name-chip{max-width:120px;font-size:11px;padding:5px 8px;}
-    #firebase-login-wrap .auth-action-chip,#firebase-login-wrap .auth-login-chip{font-size:11px;padding:5px 8px;}
+    #firebase-login-wrap{right:10px!important;top:calc(env(safe-area-inset-top) + 12px)!important;max-width:calc(100vw - 150px)!important;gap:5px!important;}
+    #firebase-login-wrap .auth-name-chip{max-width:110px;font-size:10px;padding:4px 8px;}
+    #firebase-login-wrap .auth-action-chip,#firebase-login-wrap .auth-login-chip{font-size:10px;padding:4px 8px;}
   }
 
 </style>
@@ -1392,25 +1392,29 @@ function App(){
 
       {/* Header */}
       <div style={{flexShrink:0,background:"linear-gradient(180deg,#9CC64A 0%,#86B74A 100%)",borderBottom:`2px solid ${tab==="progress"?"#A6A66F":accent}55`,boxShadow:"0 10px 28px rgba(119,151,56,.18)"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 14px 8px",borderBottom:"1px solid rgba(255,255,255,.18)"}}>
+        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 190px 10px 14px",minHeight:58,borderBottom:"1px solid rgba(255,255,255,.18)"}}>
           <div style={{fontSize:15,fontWeight:900,color:"#FFF9ED",letterSpacing:.4,textShadow:"0 1px 1px rgba(0,0,0,.08)"}}>🌿 JUN FITNESS</div>
-          <div style={{display:"flex",gap:0,background:"rgba(255,255,255,.18)",borderRadius:999,padding:3,backdropFilter:"blur(8px)"}}>
-            <button onClick={()=>setTab("cal")} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="cal"?700:400,background:tab==="cal"?"rgba(255,255,255,.9)":"transparent",color:tab==="cal"?"#5F8F3D":"rgba(255,255,255,.8)"}}>📅 カレンダー</button>
-            <button onClick={()=>setTab("progress")} style={{padding:"4px 12px",borderRadius:6,border:"none",cursor:"pointer",fontSize:11,fontWeight:tab==="progress"?700:400,background:tab==="progress"?"rgba(255,255,255,.9)":"transparent",color:tab==="progress"?"#5F8F3D":"rgba(255,255,255,.8)"}}>📊 進捗</button>
+        </div>
+
+        <div style={{padding:"10px 14px 10px",borderBottom:tab==="cal"?"1px solid rgba(255,255,255,.12)":"none"}}>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+            <button onClick={()=>setTab("cal")} style={{minHeight:46,padding:"0 14px",borderRadius:14,border:"1px solid rgba(255,255,255,.28)",cursor:"pointer",fontSize:15,fontWeight:800,background:tab==="cal"?"rgba(255,255,255,.92)":"rgba(255,255,255,.18)",color:tab==="cal"?"#5F8F3D":"#FFF9ED",backdropFilter:"blur(8px)",boxShadow:"0 6px 14px rgba(72,104,27,.10)"}}>📅 カレンダー</button>
+            <button onClick={()=>setTab("progress")} style={{minHeight:46,padding:"0 14px",borderRadius:14,border:"1px solid rgba(255,255,255,.28)",cursor:"pointer",fontSize:15,fontWeight:800,background:tab==="progress"?"rgba(255,255,255,.92)":"rgba(255,255,255,.18)",color:tab==="progress"?"#5F8F3D":"#FFF9ED",backdropFilter:"blur(8px)",boxShadow:"0 6px 14px rgba(72,104,27,.10)"}}>📊 進捗</button>
           </div>
         </div>
+
         {tab==="cal"&&(
-          <div style={{padding:"10px 14px 12px"}}>
+          <div style={{padding:"0 14px 12px"}}>
             <button
               onClick={()=>setShowCalendar(true)}
               style={{
                 width:"100%",
-                minHeight:52,
+                minHeight:56,
                 border:"1px solid rgba(255,255,255,.28)",
                 borderRadius:18,
                 background:"rgba(255,255,255,.18)",
                 color:"#FFF9ED",
-                fontSize:15,
+                fontSize:16,
                 fontWeight:800,
                 display:"flex",
                 alignItems:"center",

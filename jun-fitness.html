@@ -26,16 +26,23 @@
   ::-webkit-scrollbar{display:none;}
   textarea{font-family:inherit;}
 
+  #firebase-login-wrap{position:fixed;left:12px;top:calc(env(safe-area-inset-top) + 62px);z-index:9999;display:flex;gap:6px;align-items:center;justify-content:flex-start;max-width:calc(100vw - 24px);flex-wrap:nowrap;}
+  #firebase-login-wrap .auth-name-chip{padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.92);color:#35511E;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.10);max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px;line-height:1.2;}
+  #firebase-login-wrap .auth-action-chip{padding:6px 10px;border:none;border-radius:999px;background:#6E8E45;color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.10);font-size:12px;line-height:1.2;}
+  #firebase-login-wrap .auth-login-chip{padding:6px 10px;border:none;border-radius:999px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.14);font-size:12px;line-height:1.2;max-width:100%;}
+
   @media (max-width: 480px){
-    #firebase-login-wrap{bottom:calc(env(safe-area-inset-bottom) + 92px)!important;right:10px!important;left:10px!important;max-width:none!important;}
+    #firebase-login-wrap{left:10px!important;top:calc(env(safe-area-inset-top) + 60px)!important;max-width:calc(100vw - 20px)!important;gap:5px!important;}
+    #firebase-login-wrap .auth-name-chip{max-width:120px;font-size:11px;padding:5px 8px;}
+    #firebase-login-wrap .auth-action-chip,#firebase-login-wrap .auth-login-chip{font-size:11px;padding:5px 8px;}
   }
 
 </style>
 </head>
 <body>
 
-<div id="firebase-login-wrap" style="position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:9999;display:flex;gap:8px;align-items:center;justify-content:flex-end;max-width:calc(100vw - 24px);flex-wrap:wrap;">
-  <button id="google-login-btn" onclick="login()" style="padding:10px 14px;border:none;border-radius:12px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.18);max-width:100%;">Googleログイン</button>
+<div id="firebase-login-wrap">
+  <button id="google-login-btn" class="auth-login-chip" onclick="login()">Googleログイン</button>
 </div>
 <div id="root"></div>
 
@@ -1577,8 +1584,8 @@ function renderAuthState(user){
   if(user){
     const name = user.displayName || user.email || 'ログイン中';
     wrap.innerHTML = `
-      <div style="padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.96);color:#35511E;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.14);max-width:min(60vw,260px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;">${name}</div>
-      <button id="google-logout-btn" style="padding:10px 12px;border:none;border-radius:12px;background:#6E8E45;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.14);">ログアウト</button>
+      <div class="auth-name-chip">${name}</div>
+      <button id="google-logout-btn" class="auth-action-chip">ログアウト</button>
     `;
     const logoutBtn = document.getElementById('google-logout-btn');
     if(logoutBtn){
@@ -1587,7 +1594,7 @@ function renderAuthState(user){
       };
     }
   } else {
-    wrap.innerHTML = `<button id=\"google-login-btn\" style=\"padding:10px 14px;border:none;border-radius:12px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.18);max-width:100%;\">Googleログイン</button>`;
+    wrap.innerHTML = `<button id="google-login-btn" class="auth-login-chip">Googleログイン</button>`;
     document.getElementById('google-login-btn').onclick = window.login;
   }
 }

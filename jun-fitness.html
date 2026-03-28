@@ -100,9 +100,32 @@ window.JUN_MENU_MASTER={
 const{useState,useEffect,useRef,useCallback}=React;
 
 // ── localStorage helpers ──────────────────────────────────
-const LS_KEY="jun-fitness-v8";
+const LS_KEY="jun-fitness-v9";
 const lsLoad=()=>{try{const r=localStorage.getItem(LS_KEY);if(r)return JSON.parse(r);}catch(_){}return null;};
 const lsSave=(v)=>{try{localStorage.setItem(LS_KEY,JSON.stringify(v));}catch(_){}};
+
+const stripPhotosForCloud=(srcData={})=>Object.fromEntries(Object.entries(srcData||{}).map(([dk,day])=>{
+  if(!day||typeof day!=="object") return [dk,day];
+  const next={...day};
+  delete next.photos;
+  return [dk,next];
+}));
+const mergeRemoteWithLocalPhotos=(remoteData={},localData={})=>Object.fromEntries(Object.keys({...remoteData,...localData}).map(dk=>{
+  const remoteDay=remoteData?.[dk]||{};
+  const localDay=localData?.[dk]||{};
+  const next={...remoteDay};
+  if(Array.isArray(localDay.photos)&&localDay.photos.length) next.photos=localDay.photos;
+  return [dk,next];
+}));
+const cloneGoals=(g={})=>({
+  ...DEFAULT_GOALS,
+  ...g,
+  weight:{...DEFAULT_GOALS.weight,...(g.weight||{})},
+  fatPct:{...DEFAULT_GOALS.fatPct,...(g.fatPct||{})},
+  muscleMass:{...DEFAULT_GOALS.muscleMass,...(g.muscleMass||{})},
+  nutrition:{...DEFAULT_GOALS.nutrition,...(g.nutrition||{})},
+  exGoals:{...DEFAULT_GOALS.exGoals,...(g.exGoals||{})},
+});
 
 const fmt=(d)=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 const today=fmt(new Date());
@@ -1357,14 +1380,79 @@ function App(){
   const[panel,setPanel]=useState("meal");
   const[showCalendar,setShowCalendar]=useState(false);
   const[ready,setReady]=useState(false);
+  const[authUser,setAuthUser]=useState(null);
+  const[cloudStatus,setCloudStatus]=useState("local");
+  const localDataRef=useRef({});
+  const loadedUidRef=useRef(null);
+  const saveTimerRef=useRef(null);
 
   useEffect(()=>{
     const saved=lsLoad();
-    if(saved){setData(saved.data||{});setGoals({...DEFAULT_GOALS,...(saved.goals||{})});}
+    if(saved){
+      const initialData=saved.data||{};
+      const initialGoals=cloneGoals(saved.goals||{});
+      localDataRef.current=initialData;
+      setData(initialData);
+      setGoals(initialGoals);
+    }
     setReady(true);
   },[]);
 
-  const save=(nd,ng)=>{setData(nd);setGoals(ng);lsSave({data:nd,goals:ng});};
+  useEffect(()=>{ localDataRef.current=data; },[data]);
+
+  useEffect(()=>{
+    const applyUser=async(user)=>{
+      setAuthUser(user||null);
+      if(!user){
+        loadedUidRef.current=null;
+        setCloudStatus("local");
+        return;
+      }
+      if(!window.firebaseStore?.loadAppState) return;
+      try{
+        setCloudStatus("loading");
+        const remote=await window.firebaseStore.loadAppState(user.uid);
+        const remoteData=remote?.data||{};
+        const mergedData=mergeRemoteWithLocalPhotos(remoteData,localDataRef.current||{});
+        const mergedGoals=cloneGoals(remote?.goals||{});
+        loadedUidRef.current=user.uid;
+        setData(mergedData);
+        setGoals(mergedGoals);
+        lsSave({data:mergedData,goals:mergedGoals});
+        setCloudStatus("synced");
+      }catch(err){
+        console.error(err);
+        setCloudStatus("error");
+      }
+    };
+
+    const handler=(e)=>applyUser(e.detail||null);
+    window.addEventListener("jun-auth-changed",handler);
+    if(window.currentFirebaseUser!==undefined) applyUser(window.currentFirebaseUser);
+    return ()=>window.removeEventListener("jun-auth-changed",handler);
+  },[]);
+
+  const queueCloudSave=(nd,ng)=>{
+    if(!authUser?.uid || !window.firebaseStore?.saveAppState || loadedUidRef.current!==authUser.uid) return;
+    if(saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current=setTimeout(async()=>{
+      try{
+        setCloudStatus("saving");
+        await window.firebaseStore.saveAppState(authUser.uid,{data:stripPhotosForCloud(nd),goals:ng,updatedAt:new Date().toISOString()});
+        setCloudStatus("synced");
+      }catch(err){
+        console.error(err);
+        setCloudStatus("error");
+      }
+    },450);
+  };
+
+  const save=(nd,ng)=>{
+    setData(nd);
+    setGoals(ng);
+    lsSave({data:nd,goals:ng});
+    queueCloudSave(nd,ng);
+  };
   const updateDay=(dk,patch)=>save({...data,[dk]:{...(data[dk]||{}),...patch}},goals);
   const updateGoals=(g)=>save(data,g);
   const restoreFromBackup=(raw)=>{
@@ -1394,6 +1482,7 @@ function App(){
       <div style={{flexShrink:0,background:"linear-gradient(180deg,#9CC64A 0%,#86B74A 100%)",borderBottom:`2px solid ${tab==="progress"?"#A6A66F":accent}55`,boxShadow:"0 10px 28px rgba(119,151,56,.18)"}}>
         <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 190px 10px 14px",minHeight:58,borderBottom:"1px solid rgba(255,255,255,.18)"}}>
           <div style={{fontSize:15,fontWeight:900,color:"#FFF9ED",letterSpacing:.4,textShadow:"0 1px 1px rgba(0,0,0,.08)"}}>🌿 JUN FITNESS</div>
+          <div style={{fontSize:10,fontWeight:700,color:"rgba(255,249,237,.92)",background:"rgba(255,255,255,.14)",padding:"4px 8px",borderRadius:999,border:"1px solid rgba(255,255,255,.18)"}}>{cloudStatus==="loading"?"同期読込中":cloudStatus==="saving"?"同期保存中":cloudStatus==="synced"?"Firebase同期中":cloudStatus==="error"?"同期エラー":"端末保存"}</div>
         </div>
 
         <div style={{padding:"10px 14px 10px",borderBottom:tab==="cal"?"1px solid rgba(255,255,255,.12)":"none"}}>
@@ -1567,6 +1656,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyA4CsdZv_oiqZg8h2Pyu9I0BFQCVuBkRSg",
@@ -1579,12 +1669,30 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 const wrap = document.getElementById('firebase-login-wrap');
-const btn = document.getElementById('google-login-btn');
+
+window.currentFirebaseUser = undefined;
+window.firebaseStore = {
+  async loadAppState(uid){
+    const ref = doc(db, "users", uid, "app", "state");
+    const snap = await getDoc(ref);
+    return snap.exists() ? (snap.data()?.payload || {}) : null;
+  },
+  async saveAppState(uid,payload){
+    const ref = doc(db, "users", uid, "app", "state");
+    await setDoc(ref,{payload,updatedAt:serverTimestamp()},{merge:true});
+  }
+};
+
+function emitAuth(user){
+  window.currentFirebaseUser = user ? { uid:user.uid, email:user.email||"", displayName:user.displayName||"" } : null;
+  window.dispatchEvent(new CustomEvent("jun-auth-changed",{detail:window.currentFirebaseUser}));
+}
 
 function renderAuthState(user){
-  if(!wrap || !btn) return;
+  if(!wrap) return;
   if(user){
     const name = user.displayName || user.email || 'ログイン中';
     wrap.innerHTML = `
@@ -1599,7 +1707,8 @@ function renderAuthState(user){
     }
   } else {
     wrap.innerHTML = `<button id="google-login-btn" class="auth-login-chip">Googleログイン</button>`;
-    document.getElementById('google-login-btn').onclick = window.login;
+    const loginBtn = document.getElementById('google-login-btn');
+    if(loginBtn) loginBtn.onclick = window.login;
   }
 }
 
@@ -1612,7 +1721,10 @@ window.login = async function(){
   }
 };
 
-onAuthStateChanged(auth, renderAuthState);
+onAuthStateChanged(auth,(user)=>{
+  renderAuthState(user);
+  emitAuth(user);
+});
 </script>
 
 </body>

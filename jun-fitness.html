@@ -25,12 +25,17 @@
   input[type=number]{-moz-appearance:textfield;}
   ::-webkit-scrollbar{display:none;}
   textarea{font-family:inherit;}
+
+  @media (max-width: 480px){
+    #firebase-login-wrap{bottom:calc(env(safe-area-inset-bottom) + 92px)!important;right:10px!important;left:10px!important;max-width:none!important;}
+  }
+
 </style>
 </head>
 <body>
 
-<div id="firebase-login-wrap" style="position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:12px;z-index:9999;display:flex;gap:8px;align-items:center;">
-  <button id="google-login-btn" onclick="login()" style="padding:10px 14px;border:none;border-radius:12px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.18);">Googleログイン</button>
+<div id="firebase-login-wrap" style="position:fixed;right:12px;bottom:calc(env(safe-area-inset-bottom) + 84px);z-index:9999;display:flex;gap:8px;align-items:center;justify-content:flex-end;max-width:calc(100vw - 24px);flex-wrap:wrap;">
+  <button id="google-login-btn" onclick="login()" style="padding:10px 14px;border:none;border-radius:12px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.18);max-width:100%;">Googleログイン</button>
 </div>
 <div id="root"></div>
 
@@ -1572,7 +1577,7 @@ function renderAuthState(user){
   if(user){
     const name = user.displayName || user.email || 'ログイン中';
     wrap.innerHTML = `
-      <div style="padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.95);color:#35511E;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.14);max-width:58vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+      <div style="padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.96);color:#35511E;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.14);max-width:min(60vw,260px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px;">${name}</div>
       <button id="google-logout-btn" style="padding:10px 12px;border:none;border-radius:12px;background:#6E8E45;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.14);">ログアウト</button>
     `;
     const logoutBtn = document.getElementById('google-logout-btn');
@@ -1582,7 +1587,7 @@ function renderAuthState(user){
       };
     }
   } else {
-    wrap.innerHTML = `<button id="google-login-btn" style="padding:10px 14px;border:none;border-radius:12px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.18);">Googleログイン</button>`;
+    wrap.innerHTML = `<button id=\"google-login-btn\" style=\"padding:10px 14px;border:none;border-radius:12px;background:#4285F4;color:#fff;font-weight:700;box-shadow:0 6px 16px rgba(0,0,0,.18);max-width:100%;\">Googleログイン</button>`;
     document.getElementById('google-login-btn').onclick = window.login;
   }
 }
